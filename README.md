@@ -14,10 +14,15 @@ Goal is to create a web application for managing network devices using MikroTik 
 
 ## Requirements
 
-You need to install React library and Node JS framework.
-Also you need to CREATE .env file in your root directory, and give API connection to your router!
+- You need to install React library and Node JS framework.
+- Also you need to CREATE .env file in your root directory, and give API connection to your router!
 (I dont want to give you access to my whole home network. :D)
 
+For example:
+- API_HOST= 345678ba32x0d.sn.mynetname.net
+- API_USER= admin
+- API_PASSWORD= 12345678
+- API_PORT= 8757
 
 ## Authors
 
@@ -25,7 +30,7 @@ Also you need to CREATE .env file in your root directory, and give API connectio
 
 
 ## 🚀 About Me
-I'm a beginner full-stack developer, also enthusiast to PC and Smartphone hardware. 💻📱🔧
+I'm a beginner full-stack developer, also enthusiast to PCs and Smartphone hardware. 💻📱🔧
 
 
 ## Support and feedback
