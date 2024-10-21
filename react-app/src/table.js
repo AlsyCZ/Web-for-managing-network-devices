@@ -69,5 +69,5 @@ const ArpTable = () => {
         </div>
     );
 };
-
+//TODO: Komunikace obousměrně (Zmenit DHCP u zařízení na static, popř. změnit ip adresu)
 export default ArpTable;
