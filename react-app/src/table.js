@@ -25,11 +25,6 @@ const ArpTable = () => {
                         status: arp['status']
                     };
                 });
-                console.log('ARP Table:', data.arpTable);
-                console.log('DHCP Leases:', data.dhcpLeases);
-                console.log('Bridge Hosts:', data.bridgeHosts);
-                
-                console.log('Combined Data:', arpTable);
                 setArpEntries(arpTable);
             } catch (error) {
                 console.error('Chyba při načítání dat:', error);
@@ -39,35 +34,55 @@ const ArpTable = () => {
         fetchData();
     }, []);
 
+    const handleDelete = async (address) => {
+        try {
+            const response = await fetch(`/api/delete-arp/${address}`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                console.log('ARP záznam byl úspěšně smazán');
+                // Aktualizace ARP tabulky po smazání
+                setArpEntries(arpEntries.filter(entry => entry.address !== address));
+            } else {
+                console.error('Chyba při mazání ARP záznamu');
+            }
+        } catch (error) {
+            console.error('Chyba při mazání ARP položky:', error);
+        }
+    };
+    
+    
     return (
-        <div className="container mt-5">
-            <h1 className="text-center">ARP Tabulka</h1>
-            <table className="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>IP Adresa</th>
-                        <th>MAC Adresa</th>
-                        <th>Interface</th>
-                        <th>Bridge Port</th>
-                        <th>Host Name</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {arpEntries.map((entry, index) => (
-                        <tr key={index}>
-                            <td>{entry.address}</td>
-                            <td>{entry.macAddress}</td>
-                            <td>{entry.interface}</td>
-                            <td>{entry.bridgePort}</td>
-                            <td>{entry.hostName}</td>
-                            <td>{entry.status}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+        <table className="table table-bordered">
+            <thead>
+                <tr>
+                    <th>IP Address</th>
+                    <th>MAC Address</th>
+                    <th>Interface</th>
+                    <th>Bridge Port</th>
+                    <th>Host Name</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+    {arpEntries.map((entry, index) => (
+        <tr key={index}>
+            <td>{entry.address}</td>
+            <td>{entry.macAddress}</td>
+            <td>{entry.interface}</td>
+            <td>{entry.bridgePort}</td>
+            <td>{entry.hostName}</td>
+            <td>{entry.status}</td>
+            <td>
+                <button onClick={() => handleDelete(entry.address)}>Smazat</button>
+            </td>
+        </tr>
+    ))}
+</tbody>
+
+        </table>
     );
 };
-//TODO: Komunikace obousměrně (Zmenit DHCP u zařízení na static, popř. změnit ip adresu)
+
 export default ArpTable;

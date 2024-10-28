@@ -91,6 +91,23 @@ app.post('/api/update-device', async (req, res) => {
 });
 
 
+// Assuming the DELETE request targets /api/delete-arp/:address
+app.delete('/api/delete-arp/:address', async (req, res) => {
+    const { address } = req.params;
+
+    try {
+        const client = await api.connect();
+        await client.menu('/ip/arp').remove({ address });
+        await api.close();
+        res.status(200).send('ARP entry deleted successfully');
+    } catch (error) {
+        console.error('Error deleting ARP entry:', error);
+        res.status(500).send('Error deleting ARP entry');
+    }
+});
+
+
+
 app.listen(3001, () => {
     console.log('Server běží na http://localhost:3001');
 });
