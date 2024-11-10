@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';  // Změna na useNavigate pro React Router v6
 
 const ArpTable = () => {
     const [arpEntries, setArpEntries] = useState([]);
+    const navigate = useNavigate();  // Použijte navigate místo history
 
     useEffect(() => {
         const fetchData = async () => {
@@ -41,7 +43,6 @@ const ArpTable = () => {
             });
             if (response.ok) {
                 console.log('ARP záznam byl úspěšně smazán');
-                // Aktualizace ARP tabulky po smazání
                 setArpEntries(arpEntries.filter(entry => entry.address !== address));
             } else {
                 console.error('Chyba při mazání ARP záznamu');
@@ -50,7 +51,11 @@ const ArpTable = () => {
             console.error('Chyba při mazání ARP položky:', error);
         }
     };
-    
+
+    const handleEdit = (address) => {
+        navigate(`/device-detail/${address}`);  // Použijte navigate pro přesměrování
+
+    };
     
     return (
         <table className="table table-bordered">
@@ -66,21 +71,22 @@ const ArpTable = () => {
                 </tr>
             </thead>
             <tbody>
-    {arpEntries.map((entry, index) => (
-        <tr key={index}>
-            <td>{entry.address}</td>
-            <td>{entry.macAddress}</td>
-            <td>{entry.interface}</td>
-            <td>{entry.bridgePort}</td>
-            <td>{entry.hostName}</td>
-            <td>{entry.status}</td>
-            <td>
-                <button onClick={() => handleDelete(entry.address)}>Smazat</button>
-            </td>
-        </tr>
-    ))}
-</tbody>
-
+                {arpEntries.map((entry, index) => (
+                    <tr key={index}>
+                        <td>{entry.address}</td>
+                        <td>{entry.macAddress}</td>
+                        <td>{entry.interface}</td>
+                        <td>{entry.bridgePort}</td>
+                        <td>{entry.hostName}</td>
+                        <td>{entry.status}</td>
+                        <td>
+                            <button onClick={() => handleDelete(entry.address)}>Smazat</button>
+                            &ensp;
+                            <button onClick={() => handleEdit(entry.address)}>Upravit</button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
         </table>
     );
 };
