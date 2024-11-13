@@ -17,7 +17,8 @@
     "mikronode": "^2.3.11",
     "node-routeros": "^1.6.8",
     "react-router-dom": "^6.27.0",
-    "routeros-client": "^1.0.1"
+    "routeros-client": "^1.0.1",
+    "ws": "^8.18.0"
   },
   "description": ""
 }
