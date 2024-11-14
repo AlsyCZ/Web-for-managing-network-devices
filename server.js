@@ -3,17 +3,19 @@ const cors = require('cors');
 const { RouterOSClient } = require('routeros-client');
 const path = require('path');
 const dotenv = require('dotenv');
-const WebSocket = require('ws'); // Import WebSocket
 
 const app = express();
-dotenv.config();
 
+// Allow requests from localhost:3000 (React development server)
 const corsOptions = {
     origin: 'http://localhost:3000', // Allow requests from React app
-    methods: 'GET,POST,DELETE',
-    allowedHeaders: 'Content-Type',
+    methods: 'GET,POST,DELETE',      // Allow certain HTTP methods
+    allowedHeaders: 'Content-Type',  // Allow headers
 };
-app.use(cors(corsOptions));
+
+app.use(cors(corsOptions)); // Use CORS middleware with options
+
+dotenv.config();
 
 const api = new RouterOSClient({
     host: process.env.API_HOST,
@@ -21,103 +23,86 @@ const api = new RouterOSClient({
     password: process.env.API_PASSWORD,
     tls: { rejectUnauthorized: false },
     port: process.env.API_PORT,
+    timeout: 40000 // Increase timeout to 30 seconds or more
 });
 
-// To avoid MaxListenersExceededWarning, set the max listeners to a high number or disable it
-api.setMaxListeners(20);
-
-let isConnecting = false;
+let client = null;
+let isConnecting = false; // Flag to indicate if a connection is being established
 
 const connectToApi = async () => {
-    if (!isConnecting) {
-        isConnecting = true;
+    if (isConnecting || client) return;
+
+    isConnecting = true;
+    try {
+        client = await api.connect();
+        console.log('Connected to MikroTik API');
+    } catch (error) {
+        console.error('Error connecting to MikroTik:', error);
+        // Retry connection after a delay
+        setTimeout(connectToApi, 5000); // Attempt to reconnect after 5 seconds
+    } finally {
+        isConnecting = false;
+    }
+};
+
+// Keep the connection alive by periodically querying the router
+const keepAliveInterval = 30000; // Every 15 seconds
+
+const sendKeepAlive = async () => {
+    if (client) {
         try {
-            await api.connect();
+            await client.menu('/system/resource').getAll(); // Run a harmless command
         } catch (error) {
-            console.error('Error connecting to MikroTik:', error);
-        } finally {
-            isConnecting = false;
+            console.error('Keep-alive ping failed:', error);
+            client = null; // Reset client if the keep-alive fails
+            connectToApi(); // Attempt to reconnect
         }
     }
 };
 
-const server = app.listen(3001, () => {
-    console.log('Server running at http://localhost:3001');
-});
+setInterval(sendKeepAlive, keepAliveInterval);
 
-// WebSocket server
-const wss = new WebSocket.Server({ server });
+require('events').EventEmitter.defaultMaxListeners = 0;
 
-wss.on('connection', (ws) => {
-    console.log('Client connected to WebSocket');
+app.use(express.static(path.join(__dirname, 'public')));
 
-    ws.on('close', () => {
-        console.log('Client disconnected from WebSocket');
-    });
-});
+// Initial connection attempt at startup
+connectToApi().catch(error => console.error('Initial connection error:', error));
 
-let isConnected = false; // Proměnná, která sleduje stav připojení
-
-const connectToAPI = async () => {
-    if (!isConnected) { // Pokud není připojeno, pokus se připojit
-        await api.connect();
-        isConnected = true;
-    }
-};
-
-const closeApiConnection = async () => {
-    if (isConnected) { // Pokud je připojeno, zavři připojení
-        await api.close();
-        isConnected = false;
-    }
-};
-
-const sendArpUpdates = async () => {
+app.get('/api/raw-data', async (req, res) => {
     try {
-        await connectToAPI(); // Připojí se jen, pokud není připojeno
+        await connectToApi();
+        if (!client) throw new Error('Client not connected');
 
-        const arpTable = await api.menu('/ip/arp').getAll();
-        const dhcpLeases = await api.menu('/ip/dhcp-server/lease').getAll();
-        const bridgeHosts = await api.menu('/interface bridge host').getAll();
+        const arpTable = await client.menu('/ip/arp').getAll();
+        const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
+        const bridgeHosts = await client.menu('/interface bridge host').getAll();
 
-        // Pošle aktualizovaná data všem připojeným klientům
-        const data = JSON.stringify({ arpTable, dhcpLeases, bridgeHosts });
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(data);
-            }
-        });
+        res.json({ arpTable, dhcpLeases, bridgeHosts });
     } catch (error) {
-        console.error('Error fetching ARP data:', error);
-    } finally {
-        await closeApiConnection(); // Zavře připojení po dokončení
+        console.error('Error connecting to MikroTik:', error);
+        res.status(500).send('Error connecting to MikroTik: ' + error.message);
     }
-};
-
+});
 
 app.get('/api/device-detail/:address', async (req, res) => {
     const { address } = req.params;
-
     try {
-        await connectToApi();
+        if (!client) throw new Error('Client not connected');
 
-        const arpTable = await api.menu('/ip/arp').getAll();
+        const arpTable = await client.menu('/ip/arp').getAll();
         const arpEntry = arpTable.find(entry => entry.address === address);
-        console.log('Found ARP Entry:', arpEntry);
 
         if (!arpEntry) {
-            await api.close();
             return res.status(404).send('Device not found in ARP table');
         }
 
-        const dhcpLeases = await api.menu('/ip/dhcp-server/lease').getAll();
+        const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
         const dhcpLease = dhcpLeases.find(lease => lease.address === address);
         const isDhcpEnabled = Boolean(dhcpLease);
-        console.log('Found DHCP Lease:', dhcpLease);
 
-        const bridgeHosts = await api.menu('/interface bridge host').getAll();
+        const bridgeHosts = await client.menu('/interface bridge host').getAll();
         const bridgeHost = bridgeHosts.find(host => host.macAddress === arpEntry.macAddress);
-        console.log('Found Bridge Host:', bridgeHost);
 
         const result = {
             address,
@@ -128,45 +113,36 @@ app.get('/api/device-detail/:address', async (req, res) => {
             isDhcpEnabled
         };
 
-        await api.close();
         res.json(result);
     } catch (error) {
-        console.error('Error fetching device data:', error);
-        res.status(500).send('Error fetching device data: ' + error.message);
-    }
-});
-
-// Fetch ARP data and broadcast updates every 10 seconds
-setInterval(sendArpUpdates, 10000);
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/api/raw-data', async (req, res) => {
-    try {
-        await connectToApi();
-
-        const arpTable = await api.menu('/ip/arp').getAll();
-        const dhcpLeases = await api.menu('/ip/dhcp-server/lease').getAll();
-        const bridgeHosts = await api.menu('/interface bridge host').getAll();
-
-        await api.close();
-        res.json({ arpTable, dhcpLeases, bridgeHosts });
-    } catch (error) {
-        console.error('Error connecting to MikroTik:', error);
-        res.status(500).send('Error connecting to MikroTik: ' + error.message);
+        console.error('Error retrieving device data:', error);
+        res.status(500).send('Error retrieving device data: ' + error.message);
     }
 });
 
 app.delete('/api/delete-arp/:address', async (req, res) => {
     const { address } = req.params;
-
     try {
-        await connectToApi();
-        await api.menu('/ip/arp').remove({ address });
-        await api.close();
+        if (!client) throw new Error('Client not connected');
+
+        await client.menu('/ip/arp').remove({ address });
+
         res.status(200).send('ARP entry deleted successfully');
     } catch (error) {
         console.error('Error deleting ARP entry:', error);
         res.status(500).send('Error deleting ARP entry');
     }
+});
+
+// Ensure the connection is properly closed when the server is stopped
+process.on('SIGINT', async () => {
+    if (client) {
+        await api.close();
+        console.log('Disconnected from MikroTik API');
+    }
+    process.exit();
+});
+
+app.listen(3001, () => {
+    console.log('Server is running at http://localhost:3001');
 });

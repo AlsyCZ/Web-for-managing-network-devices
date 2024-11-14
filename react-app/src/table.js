@@ -7,10 +7,10 @@ const ArpTable = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        const ws = new WebSocket('ws://localhost:3001');
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+    const fetchData = async () => {
+        try {
+            const response = await fetch('/api/raw-data');
+            const data = await response.json();
             const arpTable = data.arpTable.map((arp) => {
                 const lease = data.dhcpLeases.find(lease => lease['address'] === arp['address']);
                 const bridge = data.bridgeHosts.find(host => host['macAddress'] === arp['macAddress']);
@@ -26,15 +26,15 @@ const ArpTable = () => {
                 };
             });
             setArpEntries(arpTable);
-        };
+        } catch (error) {
+            console.error('Chyba při získávání dat:', error);
+        }
+    };
 
-        ws.onclose = () => {
-            console.log('WebSocket connection closed');
-        };
-
-        return () => {
-            ws.close();
-        };
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 10000); // Aktualizace každých 10 sekund
+        return () => clearInterval(interval);
     }, []);
 
     const handleDelete = async (address) => {
@@ -60,6 +60,7 @@ const ArpTable = () => {
     const closeModal = () => {
         setIsModalOpen(false);
         setLoading(false); // Reset loading when closing the modal
+        setSelectedAddress(null); // Resetuje adresu při zavírání modalu
     };
 
     const handleLoadComplete = () => {
