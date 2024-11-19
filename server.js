@@ -6,6 +6,8 @@ const dotenv = require('dotenv');
 
 const app = express();
 
+app.use(express.json());
+
 // Allow requests from localhost:3000 (React development server)
 const corsOptions = {
     origin: 'http://localhost:3000', // Allow requests from React app
@@ -96,7 +98,11 @@ app.get('/api/device-detail/:address', async (req, res) => {
         if (!arpEntry) {
             return res.status(404).send('Device not found in ARP table');
         }
-
+        const rules = await client.menu('/ip/firewall/filter/').getAll({
+            chain: 'forward',
+            srcAddress: address,
+            action: 'drop',
+        });
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
         const dhcpLease = dhcpLeases.find(lease => lease.address === address);
         const isDhcpEnabled = Boolean(dhcpLease);
@@ -106,6 +112,7 @@ app.get('/api/device-detail/:address', async (req, res) => {
 
         const result = {
             address,
+            isBanned: rules.length > 0, // Pokud existuje pravidlo, IP je v banu
             hostName: dhcpLease?.['hostName'] || 'Unknown device',
             macAddress: arpEntry.macAddress || 'Unknown MAC address',
             bridgePort: bridgeHost ? bridgeHost.interface : 'Not available',
@@ -119,6 +126,51 @@ app.get('/api/device-detail/:address', async (req, res) => {
         res.status(500).send('Error retrieving device data: ' + error.message);
     }
 });
+app.post('/api/ban-ip', async (req, res) => {
+    const { ipAddress, ban } = req.body;
+
+    try {
+        const comment = `ban-${ipAddress}`; // Unikátní komentář pro každou IP adresu
+
+        if (ban) {
+            // Přidání pravidla do firewallu s unikátním komentářem
+            console.log(`Přidávám pravidlo pro IP: ${ipAddress} s komentářem: ${comment}`);
+            await client.menu('/ip/firewall/filter/').add({
+                chain: 'forward',
+                srcAddress: ipAddress,
+                action: 'drop',
+                comment: comment,
+            });
+            res.status(200).send(`IP adresa ${ipAddress} zablokována`);
+        } else {
+            // Vyhledání pravidla podle unikátního komentáře
+            console.log(`Hledám pravidla s komentářem: ${comment}`);
+            const rules = await client.menu('/ip/firewall/filter/').getAll({
+                comment: comment,
+            });
+
+            if (!rules || rules.length === 0) {
+                console.log(`Pravidlo s komentářem ${comment} nebylo nalezeno.`);
+                return res.status(404).send(`Pravidlo s komentářem ${comment} nenalezeno`);
+            }
+            // Smazání pravidel nalezených podle komentáře
+            for (const rule of rules) {
+                if (!rule.id) {
+                    console.error('Pravidlo nemá platné ID:', rule);
+                    continue; // Přeskoč pravidla bez ID
+                }
+                await client.menu('/ip/firewall/filter/').remove(rule.id);
+            }
+
+
+            res.status(200).send(`IP adresa ${ipAddress} odblokována`);
+        }
+    } catch (error) {
+        console.error('Chyba při nastavování pravidla:', error);
+        res.status(500).send('Chyba při nastavování pravidla');
+    }
+});
+
 
 app.delete('/api/delete-arp/:address', async (req, res) => {
     const { address } = req.params;
