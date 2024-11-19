@@ -134,7 +134,6 @@ app.post('/api/ban-ip', async (req, res) => {
 
         if (ban) {
             // Přidání pravidla do firewallu s unikátním komentářem
-            console.log(`Přidávám pravidlo pro IP: ${ipAddress} s komentářem: ${comment}`);
             await client.menu('/ip/firewall/filter/').add({
                 chain: 'forward',
                 srcAddress: ipAddress,
@@ -144,7 +143,6 @@ app.post('/api/ban-ip', async (req, res) => {
             res.status(200).send(`IP adresa ${ipAddress} zablokována`);
         } else {
             // Vyhledání pravidla podle unikátního komentáře
-            console.log(`Hledám pravidla s komentářem: ${comment}`);
             const rules = await client.menu('/ip/firewall/filter/').getAll({
                 comment: comment,
             });
@@ -161,8 +159,6 @@ app.post('/api/ban-ip', async (req, res) => {
                 }
                 await client.menu('/ip/firewall/filter/').remove(rule.id);
             }
-
-
             res.status(200).send(`IP adresa ${ipAddress} odblokována`);
         }
     } catch (error) {
@@ -170,6 +166,49 @@ app.post('/api/ban-ip', async (req, res) => {
         res.status(500).send('Chyba při nastavování pravidla');
     }
 });
+const axios = require('axios');
+
+app.post('/api/make-static', async (req, res) => {
+    const { ipAddress } = req.body;
+
+    try {
+        if (!client) throw new Error('Klient není připojen');
+
+        const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
+        console.log('Retrieved DHCP Leases:', dhcpLeases);
+
+        const lease = dhcpLeases.find(l => l.address === ipAddress);
+        if (!lease) {
+            console.log('Lease not found for IP:', ipAddress);
+            return res.status(404).send('DHCP lease pro tuto IP adresu nebyl nalezen');
+        }
+
+        console.log('Lease found:', lease);
+
+        // Použijeme HTTP POST požadavek k provedení příkazu make-static
+        const response = await axios.post(`http://${process.env.API_HOST}/rest/ip/dhcp-server/lease/make-static`, {
+            numbers: lease.id
+        }, {
+            auth: {
+                username: process.env.API_USER, // Zkonfigurováno v .env souboru
+                password: process.env.API_PASSWORD // Zkonfigurováno v .env souboru
+            },
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 200) {
+            res.status(200).send(`IP adresa ${ipAddress} byla nastavena jako statická`);
+        } else {
+            throw new Error('Nepodařilo se nastavit statickou IP adresu');
+        }
+    } catch (error) {
+        console.error('Chyba při nastavování statické IP adresy:', error);
+        res.status(500).send('Chyba při nastavování statické IP adresy');
+    }
+});
+
 
 
 app.delete('/api/delete-arp/:address', async (req, res) => {
