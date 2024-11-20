@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 const DeviceDetail = ({ address, onLoadComplete }) => {
     const [deviceData, setDeviceData] = useState(null);
     const [isBanned, setIsBanned] = useState(false);
-    const [isStatic, setIsStatic] = useState(false);
     const [customIp, setCustomIp] = useState('');
 
     useEffect(() => {
@@ -16,7 +15,6 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                 if (isMounted) {
                     setDeviceData(data);
                     setIsBanned(data.isBanned || false);
-                    setIsStatic(data.isDhcpEnabled === false);
                     onLoadComplete();
                 }
             } catch (error) {
@@ -122,7 +120,7 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                 </label>
                 &nbsp;
                 <button onClick={handleMakeStatic}>
-                    {isStatic ? 'IP is Static' : 'Make Static'}
+                    Make Static
                 </button>
             </div>
             <br></br>
