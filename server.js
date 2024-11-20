@@ -166,48 +166,57 @@ app.post('/api/ban-ip', async (req, res) => {
         res.status(500).send('Chyba při nastavování pravidla');
     }
 });
-const axios = require('axios');
-
 app.post('/api/make-static', async (req, res) => {
+    console.log('Received request at /api/make-static');
+    console.log('Request body:', req.body);
+
     const { ipAddress } = req.body;
+    if (!ipAddress) {
+        console.log('IP address is required');
+        return res.status(400).json({ message: 'IP address is required' });
+    }
 
     try {
-        if (!client) throw new Error('Klient není připojen');
+        if (!client) throw new Error('Client not connected');
 
+        console.log('Fetching all DHCP leases');
+        const leases = await client.menu('/ip/dhcp-server/lease').getAll();
+        console.log('DHCP leases:', leases); // Log all DHCP leases
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
-        console.log('Retrieved DHCP Leases:', dhcpLeases);
+        const dhcpLease = dhcpLeases.find(lease => lease.address === address);
 
-        const lease = dhcpLeases.find(l => l.address === ipAddress);
+        let lease = leases.find(l => l.address === ipAddress);
+
         if (!lease) {
-            console.log('Lease not found for IP:', ipAddress);
-            return res.status(404).send('DHCP lease pro tuto IP adresu nebyl nalezen');
+            console.log('No lease found for IP address:', ipAddress);
+
+            // Pokus o nalezení MAC adresy v ARP tabulce
+            console.log('Trying to find MAC address in ARP table');
+            const arpTable = await client.menu('/ip/arp').getAll();
+            console.log('ARP table:', arpTable); // Log all ARP entries
         }
 
-        console.log('Lease found:', lease);
+        const macAddress = lease['mac-address'];
+        if (!macAddress) {
+            console.log('No MAC address found for lease:', lease);
+            return res.status(400).send('MAC adresa není k dispozici pro tuto IP adresu');
+        }
 
-        // Použijeme HTTP POST požadavek k provedení příkazu make-static
-        const response = await axios.post(`http://${process.env.API_HOST}/rest/ip/dhcp-server/lease/make-static`, {
-            numbers: lease.id
-        }, {
-            auth: {
-                username: process.env.API_USER, // Zkonfigurováno v .env souboru
-                password: process.env.API_PASSWORD // Zkonfigurováno v .env souboru
-            },
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        console.log('Updating lease to static for IP address:', ipAddress);
+        await client.menu('/ip/dhcp-server/lease').set({
+            numbers: lease.id,
+            address: lease.address,
+            'mac-address': macAddress,
+            disabled: false
         });
 
-        if (response.status === 200) {
-            res.status(200).send(`IP adresa ${ipAddress} byla nastavena jako statická`);
-        } else {
-            throw new Error('Nepodařilo se nastavit statickou IP adresu');
-        }
+        res.status(200).send(`IP adresa ${ipAddress} byla nastavena jako statická`);
     } catch (error) {
-        console.error('Chyba při nastavování statické IP adresy:', error);
-        res.status(500).send('Chyba při nastavování statické IP adresy');
+        console.error('Error setting static IP address:', error.message);
+        res.status(500).send('Error setting static IP address');
     }
 });
+
 
 
 

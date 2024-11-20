@@ -32,27 +32,25 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
     }, [address, onLoadComplete]);
     
 
-    const handleMakeStatic = async () => {
-        setLoading(true);
-    
+    const handleMakeStatic = async (ipAddress) => {
+        console.log('Sending request with IP:', ipAddress); // Přidání logu
         try {
-            const response = await fetch('/api/make-static', {
+            const response = await fetch('http://localhost:3000/api/make-static', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ipAddress: deviceData.address }), // Odesílá IP adresu
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ipAddress: ipAddress }),
             });
     
-            if (response.ok) {
-                setIsStatic(true); // Změní stav na "statickou" IP
-                setDeviceData(prevData => ({ ...prevData, isDhcpEnabled: false }));
-                console.log('IP adresa byla nastavena jako statická');
-            } else {
-                throw new Error('Chyba při nastavování statické IP adresy');
+            if (!response.ok) {
+                throw new Error('Failed to make IP static');
             }
+    
+            const data = await response.json();
+            console.log('Response:', data);
         } catch (error) {
-            console.error('Chyba při nastavování statické IP adresy:', error);
-        } finally {
-            setLoading(false);
+            console.error('Error while making IP static:', error);
         }
     };
     
@@ -102,7 +100,7 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                 </label>
             </div>
             <div>
-                <button onClick={handleMakeStatic} disabled={loading || isStatic}>
+                <button onClick={() => handleMakeStatic(deviceData.address)} disabled={loading || isStatic}>
                     {isStatic ? 'IP is Static' : 'Make Static'}
                 </button>
             </div>
