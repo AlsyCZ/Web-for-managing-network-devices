@@ -47,12 +47,12 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                 throw new Error('Failed to make IP static');
             }
     
-            const data = await response.json();
-            console.log('Response:', data);
+            // Zde můžete např. aktualizovat stav komponenty na základě nové odpovědi
         } catch (error) {
             console.error('Error while making IP static:', error);
         }
     };
+    
     
 
     if (!deviceData) {
@@ -100,8 +100,8 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                 </label>
             </div>
             <div>
-                <button onClick={() => handleMakeStatic(deviceData.address)} disabled={loading || isStatic}>
-                    {isStatic ? 'IP is Static' : 'Make Static'}
+                <button onClick={() => handleMakeStatic(deviceData.address)}>
+                    Make Static
                 </button>
             </div>
         </div>

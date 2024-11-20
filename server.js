@@ -167,57 +167,70 @@ app.post('/api/ban-ip', async (req, res) => {
     }
 });
 app.post('/api/make-static', async (req, res) => {
-    console.log('Received request at /api/make-static');
-    console.log('Request body:', req.body);
-
     const { ipAddress } = req.body;
+
     if (!ipAddress) {
-        console.log('IP address is required');
         return res.status(400).json({ message: 'IP address is required' });
     }
 
     try {
         if (!client) throw new Error('Client not connected');
 
-        console.log('Fetching all DHCP leases');
-        const leases = await client.menu('/ip/dhcp-server/lease').getAll();
-        console.log('DHCP leases:', leases); // Log all DHCP leases
+        // Získání DHCP lease a ARP tabulky
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
-        const dhcpLease = dhcpLeases.find(lease => lease.address === address);
+        const arpTable = await client.menu('/ip/arp').getAll();
 
-        let lease = leases.find(l => l.address === ipAddress);
+        const dhcpLease = dhcpLeases.find(lease => lease.address === ipAddress);
+        const arpEntry = arpTable.find(entry => entry.address === ipAddress);
+        const macAddress = arpEntry?.macAddress;
 
-        if (!lease) {
-            console.log('No lease found for IP address:', ipAddress);
-
-            // Pokus o nalezení MAC adresy v ARP tabulce
-            console.log('Trying to find MAC address in ARP table');
-            const arpTable = await client.menu('/ip/arp').getAll();
-            console.log('ARP table:', arpTable); // Log all ARP entries
-        }
-
-        const macAddress = lease['mac-address'];
+        // Pokud není nalezená MAC adresa, vrátíme chybu
         if (!macAddress) {
-            console.log('No MAC address found for lease:', lease);
-            return res.status(400).send('MAC adresa není k dispozici pro tuto IP adresu');
+            return res.status(400).send('MAC address not found for the provided IP address.');
         }
 
-        console.log('Updating lease to static for IP address:', ipAddress);
-        await client.menu('/ip/dhcp-server/lease').set({
-            numbers: lease.id,
-            address: lease.address,
+        // Pokud lease existuje, smažeme ho
+        let dhcpid = null;
+        if (dhcpLease) {
+            dhcpid = dhcpLease.id;
+            console.log(`Found DHCP lease for IP: ${ipAddress}`);
+            console.log("Lease ID: ", dhcpid);  // Zkontrolujte výstup
+
+            // Ověření, zda je lease stále aktivní
+            if (dhcpLease.status !== 'bound') {
+                console.log(`Lease for IP ${ipAddress} is not in 'bound' state, cannot delete.`);
+                return res.status(400).send(`Lease for IP ${ipAddress} is not in 'bound' state.`);
+            }
+
+            // Odstranění DHCP lease
+            await client.menu('/ip/dhcp-server/lease').remove(dhcpid);
+        } else {
+            console.log(`No DHCP lease found for IP: ${ipAddress}`);
+        }
+
+        // Zkontrolujte správný název DHCP serveru
+        const dhcpServer = 'dhcp1'; // Ujistěte se, že toto je správný název vašeho DHCP serveru
+        const servers = await client.menu('/ip/dhcp-server').getAll();
+        if (!servers.some(server => server.name === dhcpServer)) {
+            return res.status(400).send(`DHCP server with name '${dhcpServer}' not found.`);
+        }
+
+        // Vytvoření nového statického lease
+        console.log(`Creating static lease for IP: ${ipAddress}`);
+        await client.menu('/ip/dhcp-server/lease').add({
+            address: ipAddress,
             'mac-address': macAddress,
-            disabled: false
+            disabled: false,
+            server: dhcpServer,  // Použití správného serveru
         });
 
-        res.status(200).send(`IP adresa ${ipAddress} byla nastavena jako statická`);
+        // Odpověď s platným JSON objektem
+        return res.status(200).json({ ipAddress: ipAddress });
     } catch (error) {
-        console.error('Error setting static IP address:', error.message);
-        res.status(500).send('Error setting static IP address');
+        console.error('Error:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
     }
 });
-
-
 
 
 app.delete('/api/delete-arp/:address', async (req, res) => {
