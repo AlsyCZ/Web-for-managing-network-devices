@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 const DeviceDetail = ({ address, onLoadComplete }) => {
     const [deviceData, setDeviceData] = useState(null);
     const [isBanned, setIsBanned] = useState(false);
-    const [isStatic, setIsStatic] = useState(false); // Track if the IP is static
-    const [loading, setLoading] = useState(false);
+    const [isStatic, setIsStatic] = useState(false);
+    const [customIp, setCustomIp] = useState('');
 
     useEffect(() => {
         let isMounted = true;
@@ -12,48 +12,62 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
             try {
                 const response = await fetch(`/api/device-detail/${address}`);
                 const data = await response.json();
-    
+
                 if (isMounted) {
                     setDeviceData(data);
                     setIsBanned(data.isBanned || false);
-                    setIsStatic(data.isDhcpEnabled === false); // Pokud je DHCP zakázáno, je IP adresa statická
+                    setIsStatic(data.isDhcpEnabled === false);
                     onLoadComplete();
                 }
             } catch (error) {
                 console.error('Chyba při načítání dat:', error);
             }
         };
-    
         fetchData();
-    
         return () => {
             isMounted = false;
         };
     }, [address, onLoadComplete]);
-    
 
-    const handleMakeStatic = async (ipAddress) => {
-        console.log('Sending request with IP:', ipAddress); // Přidání logu
+    const handleMakeStatic = async () => {
+
         try {
-            const response = await fetch('http://localhost:3000/api/make-static', {
+            const currentIpAddress = deviceData.address; // aktuální IP adresa
+            const newIpAddress = customIp || deviceData.address; // nová nebo aktuální IP adresa
+            console.log('Sending request with current IP:', currentIpAddress, 'and new IP:', newIpAddress);
+            const response = await fetch('/api/make-static', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ ipAddress: ipAddress }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentIpAddress, newIpAddress }),
             });
-    
+
             if (!response.ok) {
-                throw new Error('Failed to make IP static');
+                throw new Error('Chyba při nastavování statické IP adresy');
             }
-    
-            // Zde můžete např. aktualizovat stav komponenty na základě nové odpovědi
+
+            console.log('IP adresa byla nastavena jako statická');
         } catch (error) {
-            console.error('Error while making IP static:', error);
+            console.error('Chyba při nastavování statické IP adresy:', error);
         }
     };
-    
-    
+
+    const deleteLease = async () => {
+
+        try {
+            const ipAddress = deviceData.address; // aktuální IP adresa
+            const response = await fetch('/api/delete-lease', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ipAddress }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Chyba při mazání DHCP lease');
+            }
+        } catch (error) {
+            console.error('Chyba při mazání DHCP lease:', error);
+        }
+    };
 
     if (!deviceData) {
         return <div>Loading...</div>;
@@ -73,7 +87,6 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                         onChange={async (event) => {
                             const newBanState = event.target.checked;
                             setIsBanned(newBanState);
-                            setLoading(true);
 
                             try {
                                 const response = await fetch('/api/ban-ip', {
@@ -90,20 +103,32 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                             } catch (error) {
                                 console.error('Chyba při odesílání požadavku na IP ban:', error);
                                 setIsBanned(!newBanState);
-                            } finally {
-                                setLoading(false);
                             }
                         }}
-                        disabled={loading}
                     />
                     &nbsp; IP internet ban
                 </label>
             </div>
             <div>
-                <button onClick={() => handleMakeStatic(deviceData.address)}>
-                    Make Static
+            <br></br>
+                <label>
+                    Vlastní IP adresa:&nbsp;
+                    <input
+                        type="text"
+                        value={customIp}
+                        onChange={(e) => setCustomIp(e.target.value)}
+                        placeholder="10.0.1.3-254"
+                    />
+                </label>
+                &nbsp;
+                <button onClick={handleMakeStatic}>
+                    {isStatic ? 'IP is Static' : 'Make Static'}
                 </button>
             </div>
+            <br></br>
+            <button onClick={deleteLease}>
+                Delete current DHCP Lease
+            </button>
         </div>
     );
 };

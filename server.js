@@ -166,23 +166,34 @@ app.post('/api/ban-ip', async (req, res) => {
         res.status(500).send('Chyba při nastavování pravidla');
     }
 });
-app.post('/api/make-static', async (req, res) => {
-    const { ipAddress } = req.body;
 
-    if (!ipAddress) {
-        return res.status(400).json({ message: 'IP address is required' });
+app.post('/api/make-static', async (req, res) => {
+    const { currentIpAddress, newIpAddress } = req.body;
+
+    if (!currentIpAddress || !newIpAddress) {
+        return res.status(400).json({ message: 'Current and new IP addresses are required' });
+    }
+
+    console.log('Received current IP address:', currentIpAddress, 'and new IP address:', newIpAddress);
+
+    // Ověříme, zda je nová adresa v povoleném rozsahu
+    const ipRegex = /^10\.0\.1\.(3[0-9]|[3-9][0-9]|[12][0-9]{2}|254)$/;
+    if (!ipRegex.test(newIpAddress)) {
+        return res.status(400).json({ message: 'New IP address is not in the valid range 10.0.1.3 - 10.0.1.254' });
     }
 
     try {
         if (!client) throw new Error('Client not connected');
 
-        // Získání DHCP lease a ARP tabulky
+        // Získání DHCP lease a ARP tabulky pro aktuální IP adresu
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
         const arpTable = await client.menu('/ip/arp').getAll();
 
-        const dhcpLease = dhcpLeases.find(lease => lease.address === ipAddress);
-        const arpEntry = arpTable.find(entry => entry.address === ipAddress);
+        const dhcpLease = dhcpLeases.find(lease => lease.address === currentIpAddress);
+        const arpEntry = arpTable.find(entry => entry.address === currentIpAddress);
         const macAddress = arpEntry?.macAddress;
+
+        console.log('MAC address:', macAddress);
 
         // Pokud není nalezená MAC adresa, vrátíme chybu
         if (!macAddress) {
@@ -193,19 +204,19 @@ app.post('/api/make-static', async (req, res) => {
         let dhcpid = null;
         if (dhcpLease) {
             dhcpid = dhcpLease.id;
-            console.log(`Found DHCP lease for IP: ${ipAddress}`);
-            console.log("Lease ID: ", dhcpid);  // Zkontrolujte výstup
+            console.log(`Found DHCP lease for IP: ${currentIpAddress}`);
+            console.log("Lease ID: ", dhcpid);
 
             // Ověření, zda je lease stále aktivní
             if (dhcpLease.status !== 'bound') {
-                console.log(`Lease for IP ${ipAddress} is not in 'bound' state, cannot delete.`);
-                return res.status(400).send(`Lease for IP ${ipAddress} is not in 'bound' state.`);
+                console.log(`Lease for IP ${currentIpAddress} is not in 'bound' state, cannot delete.`);
+                return res.status(400).send(`Lease for IP ${currentIpAddress} is not in 'bound' state.`);
             }
 
             // Odstranění DHCP lease
             await client.menu('/ip/dhcp-server/lease').remove(dhcpid);
         } else {
-            console.log(`No DHCP lease found for IP: ${ipAddress}`);
+            console.log(`No DHCP lease found for IP: ${currentIpAddress}`);
         }
 
         // Zkontrolujte správný název DHCP serveru
@@ -215,23 +226,44 @@ app.post('/api/make-static', async (req, res) => {
             return res.status(400).send(`DHCP server with name '${dhcpServer}' not found.`);
         }
 
-        // Vytvoření nového statického lease
-        console.log(`Creating static lease for IP: ${ipAddress}`);
+        // Vytvoření nového statického lease pro novou IP adresu
+        console.log(`Creating static lease for new IP: ${newIpAddress}`);
         await client.menu('/ip/dhcp-server/lease').add({
-            address: ipAddress,
+            address: newIpAddress,
             'mac-address': macAddress,
             disabled: false,
-            server: dhcpServer,  // Použití správného serveru
+            server: dhcpServer,
         });
 
-        // Odpověď s platným JSON objektem
-        return res.status(200).json({ ipAddress: ipAddress });
+        return res.status(200).json({ newIpAddress });
     } catch (error) {
         console.error('Error:', error.message);
         return res.status(500).send(`Error: ${error.message}`);
     }
 });
 
+app.post('/api/delete-lease', async (req, res) => {
+    const {ipAddress} = req.body;
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
+        const dhcpLease = dhcpLeases.find(lease => lease.address === ipAddress);
+
+
+        if (dhcpLease) {
+            dhcpid = dhcpLease.id;
+
+            // Odstranění DHCP lease
+            await client.menu('/ip/dhcp-server/lease').remove(dhcpid);
+        } else {
+            console.log(`No DHCP lease found for IP: ${ipAddress}`);
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
 
 app.delete('/api/delete-arp/:address', async (req, res) => {
     const { address } = req.params;
