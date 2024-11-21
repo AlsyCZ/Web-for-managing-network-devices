@@ -1,38 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const DeviceDetail = ({ address, onLoadComplete }) => {
     const [deviceData, setDeviceData] = useState(null);
     const [isBanned, setIsBanned] = useState(false);
     const [customIp, setCustomIp] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [isStaticIp, setIsStaticIp] = useState(false); // Track if IP is static
+    const intervalIdRef = useRef(null);
 
     useEffect(() => {
         let isMounted = true;
-        const fetchData = async () => {
+    
+        const fetchData = async (addr) => {
             try {
-                const response = await fetch(`/api/device-detail/${address}`);
+                const response = await fetch(`/api/device-detail/${addr}`);
                 const data = await response.json();
-
+    
                 if (isMounted) {
-                    setDeviceData(data);
-                    setIsBanned(data.isBanned || false);
-                    onLoadComplete();
+                    // Kontrolujeme, zda je status změněn a aktualizujeme pouze při skutečné změně
+                    if (!deviceData || deviceData.address !== data.address || deviceData.status !== data.status) {
+                        setDeviceData(data); // Aktualizace stavu s novými daty
+                        setIsBanned(data.isBanned || false);
+                        onLoadComplete(); // Upozornění na dokončení načítání
+                    }
                 }
             } catch (error) {
                 console.error('Chyba při načítání dat:', error);
             }
         };
-        fetchData();
+    
+        fetchData(address); // Inicializace načtení dat
+    
+        // Nastavení intervalu pro kontrolu změn
+        intervalIdRef.current = setInterval(async () => {
+            try {
+                const ipToCheck = customIp || address;
+                const response = await fetch(`/api/device-detail/${ipToCheck}`);
+                const data = await response.json();
+    
+                if (isMounted) {
+                    // Pokud je status "bound", vyvoláme fetchData a resetujeme stará data
+                    if (data.status === 'bound' && (!deviceData || deviceData.address !== data.address)) {
+                        console.log("Status změněn na 'bound', vyvolávám fetchData pro nová data");
+                        fetchData(data.address); // Vyvoláme fetchData s novými daty
+                    }
+                }
+            } catch (error) {
+                console.error('Chyba při kontrole stavu DHCP lease:', error);
+            }
+        }, 5000); // Kontrolujeme každých 5 sekund
+    
         return () => {
             isMounted = false;
+            clearInterval(intervalIdRef.current); // Vymazání intervalu při odpojení komponenty
         };
-    }, [address, onLoadComplete]);
+    }, [address, customIp, deviceData, onLoadComplete]); // Přidání customIp a deviceData do závislostí useEffect
+    
+    
+    
+    
 
     const handleMakeStatic = async () => {
-
+        setLoading(true);
         try {
-            const currentIpAddress = deviceData.address; // aktuální IP adresa
-            const newIpAddress = customIp || deviceData.address; // nová nebo aktuální IP adresa
+            const currentIpAddress = deviceData.address;
+            const newIpAddress = customIp || deviceData.address;
+
             console.log('Sending request with current IP:', currentIpAddress, 'and new IP:', newIpAddress);
+
             const response = await fetch('/api/make-static', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -44,15 +79,18 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
             }
 
             console.log('IP adresa byla nastavena jako statická');
+            setIsStaticIp(true); // Mark IP as static
         } catch (error) {
             console.error('Chyba při nastavování statické IP adresy:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const deleteLease = async () => {
-
+        setLoading(true);
         try {
-            const ipAddress = deviceData.address; // aktuální IP adresa
+            const ipAddress = deviceData.address;
             const response = await fetch('/api/delete-lease', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -62,8 +100,12 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
             if (!response.ok) {
                 throw new Error('Chyba při mazání DHCP lease');
             }
+
+            console.log('DHCP lease smazán');
         } catch (error) {
             console.error('Chyba při mazání DHCP lease:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -103,12 +145,13 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                                 setIsBanned(!newBanState);
                             }
                         }}
+                        disabled={loading}
                     />
                     &nbsp; IP internet ban
                 </label>
             </div>
             <div>
-            <br></br>
+                <br></br>
                 <label>
                     Vlastní IP adresa:&nbsp;
                     <input
@@ -116,15 +159,26 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                         value={customIp}
                         onChange={(e) => setCustomIp(e.target.value)}
                         placeholder="10.0.1.3-254"
+                        disabled={loading}
                     />
                 </label>
                 &nbsp;
-                <button onClick={handleMakeStatic}>
+                <button
+                    onClick={() => {
+                        const ipRegex = /^10\.0\.1\.(3[0-9]|[3-9][0-9]|[12][0-9]{2}|254)$/;
+                        if (!customIp || ipRegex.test(customIp)) {
+                            handleMakeStatic();
+                        } else {
+                            alert('Neplatná IP adresa! Povolený rozsah je 10.0.1.3 až 10.0.1.254.');
+                        }
+                    }}
+                    disabled={loading}
+                >
                     Make Static
                 </button>
             </div>
             <br></br>
-            <button onClick={deleteLease}>
+            <button onClick={deleteLease} disabled={loading}>
                 Delete current DHCP Lease
             </button>
         </div>

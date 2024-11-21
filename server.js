@@ -265,6 +265,31 @@ app.post('/api/delete-lease', async (req, res) => {
     }
 });
 
+app.post('/api/find-lease', async (req, res) => {
+    const { ipAddress } = req.body;
+
+    if (!ipAddress) {
+        return res.status(400).json({ message: 'IP address is required' });
+    }
+
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
+        const dhcpLease = dhcpLeases.find(lease => lease.address === ipAddress);
+
+        if (!dhcpLease) {
+            return res.status(404).json({ message: 'Lease not found' });
+        }
+
+        return res.status(200).json({ status: dhcpLease.status });
+    } catch (error) {
+        console.error('Error:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+
+
 app.delete('/api/delete-arp/:address', async (req, res) => {
     const { address } = req.params;
     try {
