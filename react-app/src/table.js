@@ -50,7 +50,59 @@ const ArpTable = () => {
             console.error('Chyba při mazání ARP položky:', error);
         }
     };
-
+    const getVLANs = async () => {
+        try {
+            const response = await fetch('/api/get-vlans');
+            if (!response.ok) {
+                throw new Error('Failed to fetch VLANs');
+            }
+    
+            const data = await response.json();
+            console.log('VLANs:', data);
+            return data;  // Vrátí seznam všech VLAN
+        } catch (error) {
+            console.error('Error fetching VLANs:', error);
+        }
+    };
+    const assignDeviceToVLAN = async (deviceId, vlanId) => {
+        try {
+            const response = await fetch('/api/assign-device', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId, vlanId }),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to assign device to VLAN');
+            }
+    
+            const data = await response.json();
+            console.log('Device assigned to VLAN:', data);
+            return data;  // Vrátí výsledek přiřazení zařízení
+        } catch (error) {
+            console.error('Error assigning device to VLAN:', error);
+        }
+    };
+    const createVLAN = async (vlanId, name) => {
+        try {
+            const response = await fetch('/api/create-vlan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vlanId, name }),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to create VLAN');
+            }
+    
+            const data = await response.json();
+            console.log('VLAN created:', data);
+            return data;  // Vrátí vytvořenou VLAN
+        } catch (error) {
+            console.error('Error creating VLAN:', error);
+        }
+    };
+    
     const handleEdit = (address) => {
         setSelectedAddress(address);
         setIsModalOpen(true);

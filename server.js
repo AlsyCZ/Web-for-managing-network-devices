@@ -265,31 +265,6 @@ app.post('/api/delete-lease', async (req, res) => {
     }
 });
 
-app.post('/api/find-lease', async (req, res) => {
-    const { ipAddress } = req.body;
-
-    if (!ipAddress) {
-        return res.status(400).json({ message: 'IP address is required' });
-    }
-
-    try {
-        if (!client) throw new Error('Client not connected');
-
-        const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
-        const dhcpLease = dhcpLeases.find(lease => lease.address === ipAddress);
-
-        if (!dhcpLease) {
-            return res.status(404).json({ message: 'Lease not found' });
-        }
-
-        return res.status(200).json({ status: dhcpLease.status });
-    } catch (error) {
-        console.error('Error:', error.message);
-        return res.status(500).send(`Error: ${error.message}`);
-    }
-});
-
-
 app.delete('/api/delete-arp/:address', async (req, res) => {
     const { address } = req.params;
     try {
@@ -303,6 +278,31 @@ app.delete('/api/delete-arp/:address', async (req, res) => {
         res.status(500).send('Error deleting ARP entry');
     }
 });
+app.get('/api/get-vlans', async (req, res) => {
+    try {
+        const vlans = await router.write('/interface/vlan/print');
+        res.status(200).json(vlans);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch VLANs', error });
+    }
+});
+
+app.post('/api/create-vlan', async (req, res) => {
+    const { vlanId, name } = req.body;
+
+    try {
+        const result = await router.write('/interface/vlan/add', {
+            name: name,
+            vlanid: vlanId,
+            interface: 'ether1' // Předpokládáme, že VLAN připojíte k eth1
+        });
+
+        res.status(200).json({ message: 'VLAN created successfully', data: result });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to create VLAN', error });
+    }
+});
+
 
 // Ensure the connection is properly closed when the server is stopped
 process.on('SIGINT', async () => {
