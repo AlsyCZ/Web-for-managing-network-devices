@@ -1,0 +1,45 @@
+.vlan-manager .vlan-input, .vlan-manager .vlan-select {
+    width: 200px;
+    padding: 5px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    position: relative;
+    box-sizing: content-box;
+}
+.vlan-manager .vlan-select {
+    appearance: none;
+    position: relative;
+    box-sizing: content-box;
+}
+.vlan-manager .vlan-select::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    pointer-events: none;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+}
+.vlan-manager .vlan-select option {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+    box-sizing: content-box;
+}
+.vlan-manager .vlan-button {
+    padding: 5px 10px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+.vlan-manager .vlan-button:hover {
+    background-color: #0056b3;
+}

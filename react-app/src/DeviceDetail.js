@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import './DeviceDetail.css';
 
 const DeviceDetail = ({ address, onLoadComplete }) => {
     const [deviceData, setDeviceData] = useState(null);
@@ -6,8 +7,8 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
     const [customIp, setCustomIp] = useState('');
     const [loading, setLoading] = useState(false);
     const intervalIdRef = useRef(null);
-    const [firstUse, setFirstUse] = useState(true); // Stav pro sledování prvního načítání
-    const [firstUse2, setFirstUse2] = useState(true); // Stav pro sledování prvního načítání
+    const [firstUse, setFirstUse] = useState(true);
+    const [firstUse2, setFirstUse2] = useState(true);
 
     useEffect(() => {
         const fetchData = async (addr) => {
@@ -20,48 +21,44 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                 const data = await response.json();
                 console.log('Fetched data:', data);
                 onLoadComplete();
-                // Nejprve aktualizujeme data bez ohledu na stav
+
                 if(firstUse2){
                     setDeviceData(data);  
                     setFirstUse2(false);
                 }
-                // Kontrola, jestli je zařízení v požadovaném stavu 'bound' a odpovídá IP
                 if (data.status === 'bound' && data.address === customIp) {
-                    console.log('Zařízení přešlo na bound s novou IP, data aktualizována.');
+                    console.log('The device has switched to bound with a new IP, data updated.');
                     setDeviceData(data);  
-                    clearInterval(intervalIdRef.current);  // Ukončení intervalového sledování
+                    clearInterval(intervalIdRef.current);
                 }
             } catch (error) {
-                console.error('Chyba při načítání dat:', error);
+                console.error('Error while loading data:', error);
             }
         };
     
-        // První načtení dat
         if (firstUse) {
             fetchData(address);
             setFirstUse(false);
-
         }
     
         intervalIdRef.current = setInterval(() => {
-            const ipToCheck = customIp || address; // Sledujeme buď novou, nebo původní IP
-            console.log('Kontroluji stav zařízení pro IP:', ipToCheck);
+            const ipToCheck = customIp || address;
+            console.log('Checking the device status for IP:', ipToCheck);
             fetchData(ipToCheck);
         }, 5000);
     
         return () => {
             clearInterval(intervalIdRef.current);
         };
-    }, [address, customIp, firstUse]); // Přidali jsme `firstUse` pro správnou reaktivitu
+    }, [address, customIp, firstUse]);
     
-
     const handleMakeStatic = async () => {
         setLoading(true);
         try {
             const currentIpAddress = deviceData.address;
             const newIpAddress = customIp || deviceData.address;
 
-            console.log('Odesílám požadavek na nastavení statické IP:', newIpAddress);
+            console.log('Sending a request to set up a static IP:', newIpAddress);
 
             const response = await fetch('/api/make-static', {
                 method: 'POST',
@@ -70,19 +67,18 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
             });
 
             if (!response.ok) {
-                throw new Error('Chyba při nastavování statické IP adresy');
+                throw new Error('Error setting static IP address');
             }
 
-            console.log('Požadavek na nastavení statické IP byl úspěšný.');
+            console.log('The request to set a static IP was successful.');
 
-            // Aktualizujeme sledovanou IP ihned po změně
             setCustomIp(newIpAddress);
             setDeviceData((prev) => ({
                 ...prev,
-                status: 'waiting', // Přechodný stav
+                status: 'waiting',
             }));
         } catch (error) {
-            console.error('Chyba při nastavování statické IP adresy:', error);
+            console.error('Error setting static IP address:', error);
         } finally {
             setLoading(false);
         }
@@ -99,12 +95,12 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
             });
 
             if (!response.ok) {
-                throw new Error('Chyba při mazání DHCP lease');
+                throw new Error('Error deleting DHCP lease');
             }
 
-            console.log('DHCP lease smazán');
+            console.log('DHCP lease was deleted');
         } catch (error) {
-            console.error('Chyba při mazání DHCP lease:', error);
+            console.error('Error deleting DHCP lease:', error);
         } finally {
             setLoading(false);
         }
@@ -115,8 +111,8 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
     }
 
     return (
-        <div>
-            <h1>Detail zařízení: {deviceData.address}</h1>
+        <div className="device-detail">
+            <h1>Device detail: {deviceData.address}</h1>
             <p>Host Name: {deviceData.hostName}</p>
             <p>Bridge Port: {deviceData.bridgePort}</p>
             <p>MAC Address: {deviceData.macAddress}</p>
@@ -137,12 +133,12 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                                 });
 
                                 if (!response.ok) {
-                                    throw new Error('Chyba při nastavování IP banu');
+                                    throw new Error('Error while setting IP ban');
                                 }
 
-                                console.log(`IP ${newBanState ? 'zakázána' : 'povolena'}`);
+                                console.log(`IP ${newBanState ? 'prohibited' : 'allowed'}`);
                             } catch (error) {
-                                console.error('Chyba při odesílání požadavku na IP ban:', error);
+                                console.error('Error sending IP ban request:', error);
                                 setIsBanned(!newBanState);
                             }
                         }}
@@ -153,22 +149,24 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
             <div>
                 <br />
                 <label>
-                    Vlastní IP adresa:&nbsp;
+                    Custom IP address:&nbsp;
                     <input
                         type="text"
                         value={customIp}
                         onChange={(e) => setCustomIp(e.target.value)}
                         placeholder="10.0.1.3-254"
+                        className="device-input"
                     />
                 </label>
                 &nbsp;
                 <button
+                    className="device-button"
                     onClick={() => {
                         const ipRegex = /^10\.0\.1\.(3[0-9]|[3-9][0-9]|[12][0-9]{2}|254)$/;
                         if (!customIp || ipRegex.test(customIp)) {
                             handleMakeStatic();
                         } else {
-                            alert('Neplatná IP adresa! Povolený rozsah je 10.0.1.3 až 10.0.1.254.');
+                            alert('Invalid IP address! The allowed range is 10.0.1.3 to 10.0.1.254.');
                         }
                     }}
                 >
@@ -176,7 +174,9 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
                 </button>
             </div>
             <br />
-            <button onClick={deleteLease}>Delete current DHCP Lease</button>
+            <button className="device-button2" onClick={deleteLease}>
+                Delete current DHCP Lease
+            </button>
         </div>
     );
 };

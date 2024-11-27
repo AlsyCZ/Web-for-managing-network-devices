@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import DeviceDetail from './DeviceDetail';
+import VLANManager from './VlanManager.js';
+import './table.css'; // Import CSS
 
 const ArpTable = () => {
     const [arpEntries, setArpEntries] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+    const [isVlanModalOpen, setIsVlanModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    const openVlanModal = () => setIsVlanModalOpen(true);
+    const closeVlanModal = () => setIsVlanModalOpen(false);
     const fetchData = async () => {
         try {
             const response = await fetch('/api/raw-data');
@@ -16,27 +21,26 @@ const ArpTable = () => {
                 .map((arp) => {
                     const lease = data.dhcpLeases.find(lease => lease['address'] === arp['address']);
                     const bridge = data.bridgeHosts.find(host => host['macAddress'] === arp['macAddress']);
-                    const hostName = lease ? lease['hostName'] : 'Neznámé zařízení';
-                    const bridgePort = bridge ? bridge['interface'] : 'Není k dispozici';
+                    const hostName = lease ? lease['hostName'] : 'Unknown device';
+                    const bridgePort = bridge ? bridge['interface'] : 'Not available';
                     return {
                         address: arp['address'],
-                        macAddress: arp['macAddress'] || 'Není k dispozici',
+                        macAddress: arp['macAddress'] || 'Not available',
                         interface: arp['interface'],
                         bridgePort: bridgePort,
-                        hostName: hostName || 'Neznámé zařízení',
+                        hostName: hostName || 'Unknown device',
                         status: arp['status']
                     };
                 });
             setArpEntries(arpTable);
         } catch (error) {
-            console.error('Chyba při získávání dat:', error);
+            console.error('Error while getting data:', error);
         }
     };
-    
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 10000); // Aktualizace každých 10 sekund
+        const interval = setInterval(fetchData, 10000);
         return () => clearInterval(interval);
     }, []);
 
@@ -44,115 +48,30 @@ const ArpTable = () => {
         try {
             const response = await fetch(`/api/delete-arp/${address}`, { method: 'DELETE' });
             if (response.ok) {
-                console.log('ARP záznam byl úspěšně smazán');
+                console.log('ARP lease was deleted');
                 setArpEntries(arpEntries.filter(entry => entry.address !== address));
             } else {
-                console.error('Chyba při mazání ARP záznamu');
+                console.error('Erroe while deletting ARP lease');
             }
         } catch (error) {
-            console.error('Chyba při mazání ARP položky:', error);
+            console.error('Erroe while deletting ARP lease:', error);
         }
     };
-    const getVLANs = async () => {
-        try {
-            const response = await fetch('/api/get-vlans');
-            if (!response.ok) {
-                throw new Error('Failed to fetch VLANs');
-            }
-    
-            const data = await response.json();
-            console.log('VLANs:', data);
-            return data;  // Vrátí seznam všech VLAN
-        } catch (error) {
-            console.error('Error fetching VLANs:', error);
-        }
-    };
-    const assignDeviceToVLAN = async (deviceId, vlanId) => {
-        try {
-            const response = await fetch('/api/assign-device', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ deviceId, vlanId }),
-            });
-    
-            if (!response.ok) {
-                throw new Error('Failed to assign device to VLAN');
-            }
-    
-            const data = await response.json();
-            console.log('Device assigned to VLAN:', data);
-            return data;  // Vrátí výsledek přiřazení zařízení
-        } catch (error) {
-            console.error('Error assigning device to VLAN:', error);
-        }
-    };
-    const createVLAN = async (vlanId, name) => {
-        try {
-            const response = await fetch('/api/create-vlan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ vlanId, name }),
-            });
-    
-            if (!response.ok) {
-                throw new Error('Failed to create VLAN');
-            }
-    
-            const data = await response.json();
-            console.log('VLAN created:', data);
-            return data;  // Vrátí vytvořenou VLAN
-        } catch (error) {
-            console.error('Error creating VLAN:', error);
-        }
-    };
-    
+
     const handleEdit = (address) => {
         setSelectedAddress(address);
-        setIsModalOpen(true);
-        setLoading(true); // Start loading when opening the modal
+        setIsDeviceModalOpen(true);
+        setLoading(true);
     };
 
     const closeModal = () => {
-        setIsModalOpen(false);
-        setLoading(false); // Reset loading when closing the modal
-        setSelectedAddress(null); // Resetuje adresu při zavírání modalu
+        setIsDeviceModalOpen(false);
+        setLoading(false);
+        setSelectedAddress(null);
     };
 
     const handleLoadComplete = () => {
-        setLoading(false); // Stop loading when DeviceDetail finishes loading
-    };
-
-    const modalOverlayStyle = {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    };
-
-    const modalStyle = {
-        background: 'white',
-        padding: '20px',
-        borderRadius: '8px',
-        width: '66%',
-        justifyContent: 'center',
-        height: '50%',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-        display: 'block',
-    };
-
-    const closeButtonStyle = {
-        float: 'right',
-        marginRight: '10px',
-        background: 'none',
-        border: 'none',
-        fontSize: '20px',
-        cursor: 'pointer',
+        setLoading(false);
     };
 
     return (
@@ -166,7 +85,9 @@ const ArpTable = () => {
                         <th>Bridge Port</th>
                         <th>Host Name</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th>Action
+                        <button className="vlan-button" onClick={openVlanModal}>Edit VLANs</button>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -179,22 +100,30 @@ const ArpTable = () => {
                             <td>{entry.hostName}</td>
                             <td>{entry.status}</td>
                             <td>
-                                <button onClick={() => handleDelete(entry.address)}>Smazat</button>
+                                <button className="vlan-button" onClick={() => handleDelete(entry.address)}>Delete</button>
                                 &ensp;
-                                <button onClick={() => handleEdit(entry.address)}>Upravit</button>
+                                <button className="vlan-button" onClick={() => handleEdit(entry.address)}>Edit</button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
 
-            {isModalOpen && (
-                <div style={modalOverlayStyle}>
-                    <div style={modalStyle}>
+            {isDeviceModalOpen && (
+                <div className="modalOverlayStyle">
+                    <div className="modalStyle">
                         {!loading && (
-                            <button style={closeButtonStyle} onClick={closeModal}>X</button>
+                            <button className="closeButtonStyle" onClick={closeModal}>X</button>
                         )}
                         <DeviceDetail address={selectedAddress} onLoadComplete={handleLoadComplete} />
+                    </div>
+                </div>
+            )}
+
+            {isVlanModalOpen && (
+                <div className="modalOverlayStyle">
+                    <div className="modalStyle">
+                        <VLANManager onClose={closeVlanModal} />
                     </div>
                 </div>
             )}

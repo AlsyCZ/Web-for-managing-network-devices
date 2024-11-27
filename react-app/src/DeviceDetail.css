@@ -1,0 +1,47 @@
+.device-detail {
+    padding: 20px;
+    max-width: 600px;
+}
+.device-input {
+    width: 200px;
+    padding: 5px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+.device-button {
+    width: 150px;
+    padding: 5px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+.device-button2 {
+    width: 200px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #007bff;
+    font-size: 14px;
+    color: white;
+    cursor: pointer;
+}
+.device-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+.device-button {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+}
+.device-button:hover {
+    background-color: #0056b3;
+}
+.device-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}

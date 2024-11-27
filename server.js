@@ -8,14 +8,13 @@ const app = express();
 
 app.use(express.json());
 
-// Allow requests from localhost:3000 (React development server)
 const corsOptions = {
-    origin: 'http://localhost:3000', // Allow requests from React app
-    methods: 'GET,POST,DELETE',      // Allow certain HTTP methods
-    allowedHeaders: 'Content-Type',  // Allow headers
+    origin: 'http://localhost:3000',
+    methods: 'GET,POST,DELETE', 
+    allowedHeaders: 'Content-Type',
 };
 
-app.use(cors(corsOptions)); // Use CORS middleware with options
+app.use(cors(corsOptions));
 
 dotenv.config();
 
@@ -25,11 +24,11 @@ const api = new RouterOSClient({
     password: process.env.API_PASSWORD,
     tls: { rejectUnauthorized: false },
     port: process.env.API_PORT,
-    timeout: 40000 // Increase timeout to 30 seconds or more
+    timeout: 40000,
 });
 
 let client = null;
-let isConnecting = false; // Flag to indicate if a connection is being established
+let isConnecting = false;
 
 const connectToApi = async () => {
     if (isConnecting || client) return;
@@ -40,24 +39,22 @@ const connectToApi = async () => {
         console.log('Connected to MikroTik API');
     } catch (error) {
         console.error('Error connecting to MikroTik:', error);
-        // Retry connection after a delay
-        setTimeout(connectToApi, 5000); // Attempt to reconnect after 5 seconds
+        setTimeout(connectToApi, 5000);
     } finally {
         isConnecting = false;
     }
 };
 
-// Keep the connection alive by periodically querying the router
-const keepAliveInterval = 30000; // Every 15 seconds
+const keepAliveInterval = 30000;
 
 const sendKeepAlive = async () => {
     if (client) {
         try {
-            await client.menu('/system/resource').getAll(); // Run a harmless command
+            await client.menu('/system/resource').getAll();
         } catch (error) {
             console.error('Keep-alive ping failed:', error);
-            client = null; // Reset client if the keep-alive fails
-            connectToApi(); // Attempt to reconnect
+            client = null;
+            connectToApi();
         }
     }
 };
@@ -68,7 +65,6 @@ require('events').EventEmitter.defaultMaxListeners = 0;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initial connection attempt at startup
 connectToApi().catch(error => console.error('Initial connection error:', error));
 
 app.get('/api/raw-data', async (req, res) => {
@@ -112,7 +108,7 @@ app.get('/api/device-detail/:address', async (req, res) => {
 
         const result = {
             address,
-            isBanned: rules.length > 0, // Pokud existuje pravidlo, IP je v banu
+            isBanned: rules.length > 0,
             hostName: dhcpLease?.['hostName'] || 'Unknown device',
             macAddress: arpEntry.macAddress || 'Unknown MAC address',
             bridgePort: bridgeHost ? bridgeHost.interface : 'Not available',
@@ -130,40 +126,37 @@ app.post('/api/ban-ip', async (req, res) => {
     const { ipAddress, ban } = req.body;
 
     try {
-        const comment = `ban-${ipAddress}`; // Unikátní komentář pro každou IP adresu
+        const comment = `ban-${ipAddress}`;
 
         if (ban) {
-            // Přidání pravidla do firewallu s unikátním komentářem
             await client.menu('/ip/firewall/filter/').add({
                 chain: 'forward',
                 srcAddress: ipAddress,
                 action: 'drop',
                 comment: comment,
             });
-            res.status(200).send(`IP adresa ${ipAddress} zablokována`);
+            res.status(200).send(`IP address ${ipAddress} was blocked`);
         } else {
-            // Vyhledání pravidla podle unikátního komentáře
             const rules = await client.menu('/ip/firewall/filter/').getAll({
                 comment: comment,
             });
 
             if (!rules || rules.length === 0) {
-                console.log(`Pravidlo s komentářem ${comment} nebylo nalezeno.`);
-                return res.status(404).send(`Pravidlo s komentářem ${comment} nenalezeno`);
+                console.log(`Rule with comment ${comment} wasn't found.`);
+                return res.status(404).send(`Rule with comment ${comment} wasn't found`);
             }
-            // Smazání pravidel nalezených podle komentáře
             for (const rule of rules) {
                 if (!rule.id) {
-                    console.error('Pravidlo nemá platné ID:', rule);
-                    continue; // Přeskoč pravidla bez ID
+                    console.error('Rule does not have a valid ID:', rule);
+                    continue;
                 }
                 await client.menu('/ip/firewall/filter/').remove(rule.id);
             }
-            res.status(200).send(`IP adresa ${ipAddress} odblokována`);
+            res.status(200).send(`IP address ${ipAddress} was unblocked`);
         }
     } catch (error) {
-        console.error('Chyba při nastavování pravidla:', error);
-        res.status(500).send('Chyba při nastavování pravidla');
+        console.error('Error while setting up rule:', error);
+        res.status(500).send('Error while setting up rule');
     }
 });
 
@@ -176,7 +169,6 @@ app.post('/api/make-static', async (req, res) => {
 
     console.log('Received current IP address:', currentIpAddress, 'and new IP address:', newIpAddress);
 
-    // Ověříme, zda je nová adresa v povoleném rozsahu
     const ipRegex = /^10\.0\.1\.(3[0-9]|[3-9][0-9]|[12][0-9]{2}|254)$/;
     if (!ipRegex.test(newIpAddress)) {
         return res.status(400).json({ message: 'New IP address is not in the valid range 10.0.1.3 - 10.0.1.254' });
@@ -185,7 +177,6 @@ app.post('/api/make-static', async (req, res) => {
     try {
         if (!client) throw new Error('Client not connected');
 
-        // Získání DHCP lease a ARP tabulky pro aktuální IP adresu
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
         const arpTable = await client.menu('/ip/arp').getAll();
 
@@ -195,38 +186,32 @@ app.post('/api/make-static', async (req, res) => {
 
         console.log('MAC address:', macAddress);
 
-        // Pokud není nalezená MAC adresa, vrátíme chybu
         if (!macAddress) {
             return res.status(400).send('MAC address not found for the provided IP address.');
         }
 
-        // Pokud lease existuje, smažeme ho
         let dhcpid = null;
         if (dhcpLease) {
             dhcpid = dhcpLease.id;
             console.log(`Found DHCP lease for IP: ${currentIpAddress}`);
             console.log("Lease ID: ", dhcpid);
 
-            // Ověření, zda je lease stále aktivní
             if (dhcpLease.status !== 'bound') {
                 console.log(`Lease for IP ${currentIpAddress} is not in 'bound' state, cannot delete.`);
                 return res.status(400).send(`Lease for IP ${currentIpAddress} is not in 'bound' state.`);
             }
 
-            // Odstranění DHCP lease
             await client.menu('/ip/dhcp-server/lease').remove(dhcpid);
         } else {
             console.log(`No DHCP lease found for IP: ${currentIpAddress}`);
         }
 
-        // Zkontrolujte správný název DHCP serveru
-        const dhcpServer = 'dhcp1'; // Ujistěte se, že toto je správný název vašeho DHCP serveru
+        const dhcpServer = 'dhcp1';
         const servers = await client.menu('/ip/dhcp-server').getAll();
         if (!servers.some(server => server.name === dhcpServer)) {
             return res.status(400).send(`DHCP server with name '${dhcpServer}' not found.`);
         }
 
-        // Vytvoření nového statického lease pro novou IP adresu
         console.log(`Creating static lease for new IP: ${newIpAddress}`);
         await client.menu('/ip/dhcp-server/lease').add({
             address: newIpAddress,
@@ -250,11 +235,8 @@ app.post('/api/delete-lease', async (req, res) => {
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
         const dhcpLease = dhcpLeases.find(lease => lease.address === ipAddress);
 
-
         if (dhcpLease) {
             dhcpid = dhcpLease.id;
-
-            // Odstranění DHCP lease
             await client.menu('/ip/dhcp-server/lease').remove(dhcpid);
         } else {
             console.log(`No DHCP lease found for IP: ${ipAddress}`);
@@ -278,33 +260,56 @@ app.delete('/api/delete-arp/:address', async (req, res) => {
         res.status(500).send('Error deleting ARP entry');
     }
 });
+
+app.delete('/api/delete-vlan/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        await client.menu('/interface/vlan').remove({ name });
+
+        res.status(200).send('VLAN deleted successfully');
+    } catch (error) {
+        console.error('Error deleting VLAN:', error);
+        res.status(500).send('Error deleting VLAN');
+    }
+});
+
 app.get('/api/get-vlans', async (req, res) => {
     try {
-        const vlans = await router.write('/interface/vlan/print');
+        const vlans = await client.menu('/interface/vlan/print').getAll();
         res.status(200).json(vlans);
     } catch (error) {
-        res.status(500).json({ message: 'Failed to fetch VLANs', error });
+        console.error('Error fetching VLANs:', error);
+        res.status(500).json({ message: 'Failed to fetch VLANs', error: error.message || error });
     }
 });
 
 app.post('/api/create-vlan', async (req, res) => {
-    const { vlanId, name } = req.body;
+    const { vlanId, name, interface } = req.body;
 
     try {
-        const result = await router.write('/interface/vlan/add', {
+        await client.menu('/interface/vlan').add({
             name: name,
-            vlanid: vlanId,
-            interface: 'ether1' // Předpokládáme, že VLAN připojíte k eth1
+            vlanId: vlanId,
+            interface: interface
         });
 
-        res.status(200).json({ message: 'VLAN created successfully', data: result });
+        res.status(200).json({ message: 'VLAN created successfully'});
     } catch (error) {
-        res.status(500).json({ message: 'Failed to create VLAN', error });
+        res.status(500).json({ message: 'Failed to create VLAN', error: error.message || error });
     }
 });
 
+app.get('/api/get-interfaces', async (req, res) => {
+    try {
+        const interfaces = await client.menu('/interface/print').getAll();
+        res.status(200).json(interfaces);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch interfaces', error: error.message || error });
+    }
+});
 
-// Ensure the connection is properly closed when the server is stopped
 process.on('SIGINT', async () => {
     if (client) {
         await api.close();

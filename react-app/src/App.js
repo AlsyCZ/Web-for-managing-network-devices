@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Table from './table';
-import DeviceDetail from './DeviceDetail'; // Importujte DeviceDetail komponentu
+import DeviceDetail from './DeviceDetail';
 
 function App() {
     return (
