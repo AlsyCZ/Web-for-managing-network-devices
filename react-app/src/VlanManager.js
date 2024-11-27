@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './VlanManager.css';
-// TODO: Assign VLAN to IP pools
+// TODO: Assign VLAN to IP pool
 // TODO: DHCP config for VLANs
 // TODO: Firewall rules and routing? (if needed)
 const VLANManager = ({ onClose }) => {
