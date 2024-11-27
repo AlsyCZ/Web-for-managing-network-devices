@@ -11,25 +11,28 @@ const ArpTable = () => {
         try {
             const response = await fetch('/api/raw-data');
             const data = await response.json();
-            const arpTable = data.arpTable.map((arp) => {
-                const lease = data.dhcpLeases.find(lease => lease['address'] === arp['address']);
-                const bridge = data.bridgeHosts.find(host => host['macAddress'] === arp['macAddress']);
-                const hostName = lease ? lease['hostName'] : 'Neznámé zařízení';
-                const bridgePort = bridge ? bridge['interface'] : 'Není k dispozici';
-                return {
-                    address: arp['address'],
-                    macAddress: arp['macAddress'] || 'Není k dispozici',
-                    interface: arp['interface'],
-                    bridgePort: bridgePort,
-                    hostName: hostName || 'Neznámé zařízení',
-                    status: arp['status']
-                };
-            });
+            const arpTable = data.arpTable
+                .filter(arp => arp['interface'] !== 'ether1-WAN') // Filter WAN entry for safety!
+                .map((arp) => {
+                    const lease = data.dhcpLeases.find(lease => lease['address'] === arp['address']);
+                    const bridge = data.bridgeHosts.find(host => host['macAddress'] === arp['macAddress']);
+                    const hostName = lease ? lease['hostName'] : 'Neznámé zařízení';
+                    const bridgePort = bridge ? bridge['interface'] : 'Není k dispozici';
+                    return {
+                        address: arp['address'],
+                        macAddress: arp['macAddress'] || 'Není k dispozici',
+                        interface: arp['interface'],
+                        bridgePort: bridgePort,
+                        hostName: hostName || 'Neznámé zařízení',
+                        status: arp['status']
+                    };
+                });
             setArpEntries(arpTable);
         } catch (error) {
             console.error('Chyba při získávání dat:', error);
         }
     };
+    
 
     useEffect(() => {
         fetchData();
