@@ -59,7 +59,6 @@ const VLANManager = ({ onClose }) => {
             });
 
             if (response.ok) {
-                const result = await response.json();
                 setVlans(prevVlans => [...prevVlans, { vlanId, name: vlanName, interface: selectedInterface }]);
                 setVlanId('');
                 setVlanName('');
