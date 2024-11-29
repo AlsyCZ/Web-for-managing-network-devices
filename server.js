@@ -261,12 +261,12 @@ app.delete('/api/delete-arp/:address', async (req, res) => {
     }
 });
 
-app.delete('/api/delete-vlan/:name', async (req, res) => {
-    const { name } = req.params;
+app.delete('/api/delete-vlan/:vlanId', async (req, res) => {
+    const { vlanId } = req.params;
     try {
         if (!client) throw new Error('Client not connected');
 
-        await client.menu('/interface/vlan').remove({ name });
+        await client.menu('/interface/bridge/vlan').remove(vlanId);
 
         res.status(200).send('VLAN deleted successfully');
     } catch (error) {
@@ -277,27 +277,11 @@ app.delete('/api/delete-vlan/:name', async (req, res) => {
 
 app.get('/api/get-vlans', async (req, res) => {
     try {
-        const vlans = await client.menu('/interface/vlan/print').getAll();
+        const vlans = await client.menu('/interface/bridge/vlan/print').getAll();
         res.status(200).json(vlans);
     } catch (error) {
         console.error('Error fetching VLANs:', error);
         res.status(500).json({ message: 'Failed to fetch VLANs', error: error.message || error });
-    }
-});
-
-app.post('/api/create-vlan', async (req, res) => {
-    const { vlanId, name, interface } = req.body;
-
-    try {
-        await client.menu('/interface/vlan').add({
-            name: name,
-            vlanId: vlanId,
-            interface: interface
-        });
-
-        res.status(200).json({ message: 'VLAN created successfully'});
-    } catch (error) {
-        res.status(500).json({ message: 'Failed to create VLAN', error: error.message || error });
     }
 });
 
@@ -309,6 +293,51 @@ app.get('/api/get-interfaces', async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch interfaces', error: error.message || error });
     }
 });
+
+app.post('/api/enable-vlan-filtering', async (req, res) => {
+    const { bridge, enable } = req.body; // `bridge` je název bridge, `enable` je true/false
+    try {
+        await client.menu('/interface/bridge').set({
+            name: bridge,
+            vlan_filtering: enable ? 'yes' : 'no'
+        });
+        res.status(200).json({ message: 'VLAN Filtering updated successfully' });
+    } catch (error) {
+        console.error('Error enabling VLAN filtering:', error);
+        res.status(500).json({ message: 'Failed to update VLAN Filtering', error: error.message || error });
+    }
+});
+
+
+app.post('/api/create-vlan', async (req, res) => {
+    const { vlanId, bridge, tagged, untagged } = req.body;
+
+    try {
+        await client.menu('/interface/bridge/vlan').add({
+            vlanIds: vlanId,
+            bridge: bridge,
+            tagged: tagged || [],
+            untagged: untagged || []
+        });
+
+        res.status(200).json({ message: 'VLAN created successfully' });
+    } catch (error) {
+        console.error('Failed to create VLAN:', error);
+        res.status(500).json({ message: 'Failed to create VLAN', error: error.message || error });
+    }
+});
+
+
+app.get('/api/get-bridges', async (req, res) => {
+    try {
+        const bridges = await client.menu('/interface/bridge').getAll();
+        res.status(200).json(bridges);
+    } catch (error) {
+        console.error('Error fetching bridges:', error);
+        res.status(500).json({ message: 'Failed to fetch bridges', error: error.message || error });
+    }
+});
+
 
 process.on('SIGINT', async () => {
     if (client) {
