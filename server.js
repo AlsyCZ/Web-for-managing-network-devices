@@ -294,20 +294,6 @@ app.get('/api/get-interfaces', async (req, res) => {
     }
 });
 
-app.post('/api/enable-vlan-filtering', async (req, res) => {
-    const { bridge, enable } = req.body; // `bridge` je název bridge, `enable` je true/false
-    try {
-        await client.menu('/interface/bridge').set({
-            name: bridge,
-            vlan_filtering: enable ? 'yes' : 'no'
-        });
-        res.status(200).json({ message: 'VLAN Filtering updated successfully' });
-    } catch (error) {
-        console.error('Error enabling VLAN filtering:', error);
-        res.status(500).json({ message: 'Failed to update VLAN Filtering', error: error.message || error });
-    }
-});
-
 
 app.post('/api/create-vlan', async (req, res) => {
     const { vlanId, bridge, tagged, untagged } = req.body;
@@ -327,7 +313,6 @@ app.post('/api/create-vlan', async (req, res) => {
     }
 });
 
-
 app.get('/api/get-bridges', async (req, res) => {
     try {
         const bridges = await client.menu('/interface/bridge').getAll();
@@ -337,7 +322,33 @@ app.get('/api/get-bridges', async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch bridges', error: error.message || error });
     }
 });
+app.post('/api/enable-vlan-filtering', async (req, res) => {
+    const { bridgeName, vlanFiltering } = req.body; // `bridgeName` je název bridge, `vlanFiltering` je true/false
+    try {
+        await client.menu('/interface/bridge').set({
+            name: bridgeName,
+            'vlan-filtering': vlanFiltering ? 'yes' : 'no'
+        });
+        res.status(200).json({ message: 'VLAN Filtering updated successfully' });
+    } catch (error) {
+        console.error('Error enabling VLAN filtering:', error);
+        res.status(500).json({ message: 'Failed to update VLAN Filtering', error: error.message || error });
+    }
+});
 
+app.post('/api/enable-mvrp', async (req, res) => {
+    const { bridgeName, mvrp } = req.body; // `bridgeName` je název bridge, `mvrp` je true/false
+    try {
+        await client.menu('/interface/bridge').set({
+            name: bridgeName,
+            mvrp: mvrp ? 'yes' : 'no'
+        });
+        res.status(200).json({ message: 'MVRP updated successfully' });
+    } catch (error) {
+        console.error('Error enabling MVRP:', error);
+        res.status(500).json({ message: 'Failed to update MVRP', error: error.message || error });
+    }
+});
 
 process.on('SIGINT', async () => {
     if (client) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './VlanManager.css';
-//TODO: Add VLAN Filtering + MVRP
+
 const VLANManager = ({ onClose }) => {
     const [vlans, setVlans] = useState([]);
     const [vlanId, setVlanId] = useState('');
@@ -42,6 +42,90 @@ const VLANManager = ({ onClose }) => {
     
         fetchAllData();
     }, []);
+
+    const handleCheckboxChangeVlan = async (bridgeName, vlanFiltering) => {
+        const bridge = bridges.find(b => b.name === bridgeName);
+            if (bridge.vlanFiltering && bridge.mvrp) {
+                await handleCheckboxChangeMvrp(bridge.name, false);
+            }
+        try {
+            const response = await fetch('http://localhost:3001/api/enable-vlan-filtering', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bridgeName,
+                    vlanFiltering,
+                }),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to update VLAN Filtering');
+            }
+    
+            const updatedBridges = bridges.map((bridge) =>
+                bridge.name === bridgeName ? { ...bridge, vlanFiltering } : bridge
+            );
+            setBridges(updatedBridges);
+            refreshBridgesAndVlans();
+        } catch (err) {
+            setError('Failed to update VLAN Filtering');
+        }
+    };
+    const refreshBridgesAndVlans = async () => {
+        try {
+            setLoading(true);
+    
+            // Znovu načtěte mosty
+            const bridgesResponse = await fetch('http://localhost:3001/api/get-bridges');
+            const bridges = await bridgesResponse.json();
+            setBridges(bridges);
+    
+            // Znovu načtěte VLANy
+            const vlansResponse = await fetch('http://localhost:3001/api/get-vlans');
+            const vlans = await vlansResponse.json();
+            setVlans(vlans);
+    
+            setError(null);
+        } catch (err) {
+            setError('Failed to fetch data');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const handleCheckboxChangeMvrp = async (bridgeName, mvrp) => {
+        try {
+            const bridge = bridges.find(b => b.name === bridgeName);
+            if (!bridge.vlanFiltering && !bridge.mvrp) {
+                await handleCheckboxChangeVlan(bridge.name, true);
+            }
+    
+            const response = await fetch('http://localhost:3001/api/enable-mvrp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bridgeName,
+                    mvrp,
+                }),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to update MVRP');
+            }
+    
+            const updatedBridges = bridges.map((bridge) =>
+                bridge.name === bridgeName ? { ...bridge, mvrp } : bridge
+            );
+            setBridges(updatedBridges);
+            refreshBridgesAndVlans();
+        } catch (err) {
+            setError('Failed to update MVRP');
+        }
+    };
     
     const handleCreateVlan = async () => {
         if (!vlanId || !selectedBridge) {
@@ -180,6 +264,34 @@ const VLANManager = ({ onClose }) => {
                         &nbsp;
                         <button onClick={handleCreateVlan} className="vlan-button">Create VLAN</button>
                     </div>
+                    &nbsp;
+                    <h3>Bridge Interfaces</h3>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            <ul>
+    {bridges.map((bridge) => (
+        <li key={bridge.name}>
+            <strong>Bridge:</strong> {bridge.name}, 
+            <strong> VLAN Filtering: </strong> 
+            <label>
+                <input
+                    type="checkbox"
+                    checked={bridge.vlanFiltering}
+                    onChange={(e) => handleCheckboxChangeVlan(bridge.name, e.target.checked)}
+                />
+            </label>
+            , 
+            <strong> MVRP: </strong>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={bridge.mvrp}
+                    onChange={(e) => handleCheckboxChangeMvrp(bridge.name, e.target.checked)}
+                />
+            </label>
+        </li>
+    ))}
+</ul>
+
                 </>
             )}
         </div>
