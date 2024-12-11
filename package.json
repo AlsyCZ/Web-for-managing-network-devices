@@ -10,11 +10,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.7.7",
+    "axios": "^1.7.9",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
     "mikronode": "^2.3.11",
+    "mysql2": "^3.11.5",
     "node-routeros": "^1.6.8",
     "react-router-dom": "^6.27.0",
     "routeros-client": "^1.1.2"

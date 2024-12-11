@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import DeviceDetail from './DeviceDetail';
+import DeviceDetail from './DeviceDetail.js';
 import VLANManager from './VlanManager.js';
 import './table.css'; // Import CSS
 

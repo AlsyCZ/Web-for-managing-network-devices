@@ -3,15 +3,17 @@ const cors = require('cors');
 const { RouterOSClient } = require('routeros-client');
 const path = require('path');
 const dotenv = require('dotenv');
-
+const mysql = require('mysql2');
 const app = express();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 app.use(express.json());
 
 const corsOptions = {
     origin: 'http://localhost:3000',
-    methods: 'GET,POST,DELETE', 
-    allowedHeaders: 'Content-Type',
+    methods: 'GET,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
 };
 
 app.use(cors(corsOptions));
@@ -66,6 +68,90 @@ require('events').EventEmitter.defaultMaxListeners = 0;
 app.use(express.static(path.join(__dirname, 'public')));
 
 connectToApi().catch(error => console.error('Initial connection error:', error));
+
+//MYSQL database
+const db = mysql.createConnection({ 
+    host: 'localhost', 
+    user: 'root', 
+    password: '', 
+    database: 'projekt' 
+});
+
+db.connect(err => {
+    if (err) {
+        console.error('Error connecting to the database:', err);
+    } else {
+        console.log('Connected to the MySQL database');
+    }
+});
+
+app.post('/register', async (req, res) => {
+    const { username, password, email } = req.body;
+    
+    // Check if username or email already exists
+    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
+        if (err) {
+            console.error('Error querying the database:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (results.length > 0) {
+            return res.status(400).json({ error: 'Username or email already exists' });
+        }
+
+        try {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            db.query('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [username, hashedPassword, email], (err, results) => {
+                if (err) {
+                    console.error('Error inserting user:', err);
+                    return res.status(500).json({ error: 'Internal server error' });
+                } else {
+                    return res.status(201).json({ message: 'User registered' });
+                }
+            });
+        } catch (error) {
+            console.error('Error hashing password:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+});
+
+app.post('/login', (req, res) => { 
+    const { username, password } = req.body; 
+    db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => { 
+        if (err) { 
+            res.status(500).json({ error: err.message }); 
+        } else if (results.length === 0 || !(await bcrypt.compare(password, results[0].password))) {
+            res.status(401).json({ message: 'Invalid credentials' }); 
+        } else { 
+            const token = jwt.sign({ id: results[0].id }, 'your_jwt_secret', { expiresIn: '1h' }); 
+            res.json({ token }); } 
+    }); 
+});
+
+const verifyToken = (req, res, next) => { 
+    const token = req.headers['authorization']; 
+        if (!token) { 
+            return res.status(403).json({ message: 'No token provided' }); 
+        } 
+        jwt.verify(token.split(' ')[1], 'your_jwt_secret', (err, decoded) => { if (err) { 
+            return res.status(500).json({ message: 'Failed to authenticate token' }); 
+        } 
+        req.userId = decoded.id; next(); 
+    }); 
+};
+
+app.get('/username', verifyToken, (req, res) => { 
+    db.query('SELECT username FROM users WHERE id = ?', [req.userId], (err, results) => { 
+        if (err) { 
+            return res.status(500).json({ error: 'Internal server error' }); 
+        } 
+        if (results.length === 0) { 
+            return res.status(404).json({ error: 'User not found' }); 
+        } 
+        res.json({ username: results[0].username });
+    });
+});
 
 app.get('/api/raw-data', async (req, res) => {
     try {
