@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './form.css';
+import './Styles/form.css';
+
 //TODO: Multi-factor autentification via email!
 
 const Register = () => {

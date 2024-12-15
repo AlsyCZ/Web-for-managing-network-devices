@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './DeviceDetail.css';
+import './Styles/DeviceDetail.css';
 
 const DeviceDetail = ({ address, onLoadComplete }) => {
     const [deviceData, setDeviceData] = useState(null);

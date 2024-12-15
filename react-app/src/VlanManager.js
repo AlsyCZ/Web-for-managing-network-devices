@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './VlanManager.css';
+import './Styles/VlanManager.css';
 
 const VLANManager = ({ onClose }) => {
     const [vlans, setVlans] = useState([]);

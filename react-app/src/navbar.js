@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './navbar.css'; // Import the navbar CSS
+import './Styles/navbar.css'; // Import the navbar CSS
 
 const Navbar = () => {
     const [username, setUsername] = useState('');
