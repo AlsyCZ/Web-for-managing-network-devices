@@ -8,6 +8,10 @@
     position: relative;
     box-sizing: content-box;
 }
+.vlan-manager .content {
+    max-height: 400px;
+    overflow-y: auto;
+}
 .vlan-manager .vlan-select {
     appearance: none;
     position: relative;

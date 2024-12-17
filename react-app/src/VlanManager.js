@@ -5,8 +5,8 @@ const VLANManager = ({ onClose }) => {
     const [vlans, setVlans] = useState([]);
     const [vlanId, setVlanId] = useState('');
     const [selectedBridge, setSelectedBridge] = useState('');
-    const [selectedTaggedInterface, setSelectedTaggedInterface] = useState('');
-    const [selectedUntaggedInterface, setSelectedUntaggedInterface] = useState('');
+    const [taggedInterfaces, setTaggedInterfaces] = useState([]);
+    const [untaggedInterfaces, setUntaggedInterfaces] = useState([]);
     const [bridges, setBridges] = useState([]);
     const [interfaces, setInterfaces] = useState([]);
     const [error, setError] = useState(null);
@@ -16,22 +16,19 @@ const VLANManager = ({ onClose }) => {
         const fetchAllData = async () => {
             try {
                 setLoading(true);
-    
-                // Fetch bridges
-                const bridgesResponse = await fetch('http://localhost:3001/api/get-bridges');
-                const bridges = await bridgesResponse.json();
-                setBridges(bridges);
+                const [bridgesResponse, interfacesResponse, vlansResponse] = await Promise.all([
+                    fetch('http://localhost:3001/api/get-bridges'),
+                    fetch('http://localhost:3001/api/get-interfaces'),
+                    fetch('http://localhost:3001/api/get-vlans'),
+                ]);
 
-                // Fetch interfaces
-                const interfacesResponse = await fetch('http://localhost:3001/api/get-interfaces');
+                const bridges = await bridgesResponse.json();
                 const interfaces = await interfacesResponse.json();
-                setInterfaces(interfaces);
-    
-                // Fetch VLANs on bridges
-                const vlansResponse = await fetch('http://localhost:3001/api/get-vlans');
                 const vlans = await vlansResponse.json();
+
+                setBridges(bridges);
+                setInterfaces(interfaces);
                 setVlans(vlans);
-    
                 setError(null);
             } catch (err) {
                 setError('Failed to fetch data');
@@ -39,9 +36,81 @@ const VLANManager = ({ onClose }) => {
                 setLoading(false);
             }
         };
-    
+
         fetchAllData();
     }, []);
+
+    const handleAddInterface = (iface, type) => {
+        if (type === 'tagged' && !taggedInterfaces.includes(iface)) {
+            setTaggedInterfaces([...taggedInterfaces, iface]);
+        } else if (type === 'untagged' && !untaggedInterfaces.includes(iface)) {
+            setUntaggedInterfaces([...untaggedInterfaces, iface]);
+        }
+    };
+
+    const handleRemoveInterface = (iface, type) => {
+        if (type === 'tagged') {
+            setTaggedInterfaces(taggedInterfaces.filter((item) => item !== iface));
+        } else if (type === 'untagged') {
+            setUntaggedInterfaces(untaggedInterfaces.filter((item) => item !== iface));
+        }
+    };
+
+    const handleCreateVlan = async () => {
+        if (!vlanId || !selectedBridge) {
+            setError('VLAN ID and bridge are required');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:3001/api/create-vlan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vlanId,
+                    bridge: selectedBridge,
+                    tagged: taggedInterfaces,
+                    untagged: untaggedInterfaces,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setError(errorData.message || 'Failed to create VLAN');
+            } else {
+                setVlanId('');
+                setSelectedBridge('');
+                setTaggedInterfaces([]);
+                setUntaggedInterfaces([]);
+                setError(null);
+
+                const updatedVlansResponse = await fetch('http://localhost:3001/api/get-vlans');
+                const updatedVlans = await updatedVlansResponse.json();
+                setVlans(updatedVlans);
+            }
+        } catch (err) {
+            setError('Error occurred while creating VLAN');
+        }
+    };
+
+    const handleDeleteVlan = async (vlanId) => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/delete-vlan/${vlanId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setError(errorData.message || 'Failed to delete VLAN');
+            } else {
+                const updatedVlansResponse = await fetch('http://localhost:3001/api/get-vlans');
+                const updatedVlans = await updatedVlansResponse.json();
+                setVlans(updatedVlans);
+            }
+        } catch (err) {
+            setError('Error occurred while deleting VLAN');
+        }
+    };
 
     const handleCheckboxChangeVlan = async (bridgeName, vlanFiltering) => {
         const bridge = bridges.find(b => b.name === bridgeName);
@@ -127,66 +196,6 @@ const VLANManager = ({ onClose }) => {
         }
     };
     
-    const handleCreateVlan = async () => {
-        if (!vlanId || !selectedBridge) {
-            setError('VLAN ID and bridge are required');
-            return;
-        }
-    
-        try {
-            const response = await fetch('http://localhost:3001/api/create-vlan', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    vlanId,
-                    bridge: selectedBridge,
-                    tagged: selectedTaggedInterface ? [selectedTaggedInterface] : [],
-                    untagged: selectedUntaggedInterface ? [selectedUntaggedInterface] : []
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                setError(errorData.message || 'Failed to create VLAN');
-            } else {
-                // Fetch updated VLANs after successful creation
-                const updatedVlansResponse = await fetch('http://localhost:3001/api/get-vlans');
-                const updatedVlans = await updatedVlansResponse.json();
-                setVlans(updatedVlans);
-                
-                setVlanId('');
-                setSelectedBridge('');
-                setSelectedTaggedInterface('');
-                setSelectedUntaggedInterface('');
-                setError(null);
-            }
-        } catch (err) {
-            setError('Error occurred while creating VLAN');
-        }
-    };
-
-    const handleDeleteVlan = async (vlanId) => {
-        try {
-            const response = await fetch(`http://localhost:3001/api/delete-vlan/${vlanId}`, {
-                method: 'DELETE',
-            });
-    
-            if (!response.ok) {
-                const errorData = await response.json();
-                setError(errorData.message || 'Failed to delete VLAN');
-            } else {
-                // Fetch updated VLANs after successful deletion
-                const updatedVlansResponse = await fetch('http://localhost:3001/api/get-vlans');
-                const updatedVlans = await updatedVlansResponse.json();
-                setVlans(updatedVlans);
-            }
-        } catch (err) {
-            setError('Error occurred while deleting VLAN');
-        }
-    };
-
     const closeButtonStyle = {
         float: 'right',
         marginRight: '10px',
@@ -213,62 +222,80 @@ const VLANManager = ({ onClose }) => {
                             </li>
                         ))}
                     </ul>
-                    <div>
-                        <h3>Create New Bridge VLAN</h3>
-                        <input
-                            type="text"
-                            placeholder="VLAN ID"
-                            value={vlanId}
-                            onChange={(e) => setVlanId(e.target.value)}
-                            className="vlan-input"
-                        />
+
+                    <div className="content" style={{ display: 'collumn', gap: '20px'}}>
+                        <div>
+                            <h3>Create New VLAN</h3>
+                            <input
+                                type="text"
+                                placeholder="VLAN ID"
+                                value={vlanId}
+                                onChange={(e) => setVlanId(e.target.value)}
+                                className="vlan-input"
+                            />
+                            <select
+                                value={selectedBridge}
+                                onChange={(e) => setSelectedBridge(e.target.value)}
+                                className="vlan-select"
+                            >
+                                <option value="">Select Bridge</option>
+                                {bridges.map((bridge) => (
+                                    <option key={bridge.name} value={bridge.name}>{bridge.name}</option>
+                                ))}
+                            </select>
+
+                            <button onClick={handleCreateVlan} className="vlan-button">Create VLAN</button>
+                        </div>
                         &nbsp;
-                        <select
-                            value={selectedBridge}
-                            onChange={(e) => setSelectedBridge(e.target.value)}
-                            className="vlan-select"
-                        >
-                            <option value="">Select Bridge</option>
-                            {bridges.map((bridge, index) => (
-                                <option key={index} value={bridge.name}>
-                                    {bridge.name}
-                                </option>
-                            ))}
-                        </select>
-                        &nbsp;
-                        <select
-                            value={selectedTaggedInterface}
-                            onChange={(e) => setSelectedTaggedInterface(e.target.value)}
-                            className="vlan-select"
-                        >
-                            <option value="">Select Tagged Interface</option>
-                            {interfaces.map((iface, index) => (
-                                <option key={index} value={iface.name}>
-                                    {iface.name}
-                                </option>
-                            ))}
-                        </select>
-                        &nbsp;
-                        <select
-                            value={selectedUntaggedInterface}
-                            onChange={(e) => setSelectedUntaggedInterface(e.target.value)}
-                            className="vlan-select"
-                        >
-                            <option value="">Select Untagged Interface</option>
-                            {interfaces.map((iface, index) => (
-                                <option key={index} value={iface.name}>
-                                    {iface.name}
-                                </option>
-                            ))}
-                        </select>
-                        &nbsp;
-                        <button onClick={handleCreateVlan} className="vlan-button">Create VLAN</button>
+                        <div>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div>
+                                    <h5>Tagged interface:</h5>
+                                    <select
+                                        onChange={(e) => handleAddInterface(e.target.value, 'tagged')}
+                                        className="vlan-select"
+                                    >
+                                        <option value="">Select Interface</option>
+                                        {interfaces.map((iface) => (
+                                            <option key={iface.name} value={iface.name}>{iface.name}</option>
+                                        ))}
+                                    </select>
+                                    <ul>
+                                        {taggedInterfaces.map((iface) => (
+                                            <li key={iface}>
+                                                {iface}{' '}
+                                                <button className="vlan-button" onClick={() => handleRemoveInterface(iface, 'tagged')}>-</button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h5>Untagged interface:</h5>
+                                    <select
+                                        onChange={(e) => handleAddInterface(e.target.value, 'untagged')}
+                                        className="vlan-select"
+                                    >
+                                        <option value="">Select Interface</option>
+                                        {interfaces.map((iface) => (
+                                            <option key={iface.name} value={iface.name}>{iface.name}</option>
+                                        ))}
+                                    </select>
+                                    <ul>
+                                        {untaggedInterfaces.map((iface) => (
+                                            <li key={iface}>
+                                                {iface}{' '}
+                                                <button className="vlan-button" onClick={() => handleRemoveInterface(iface, 'untagged')}>-</button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    &nbsp;
+
                     <h3>Bridge Interfaces</h3>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <ul>
-    {bridges.map((bridge) => (
+                    <ul>
+                    {bridges.map((bridge) => (
         <li key={bridge.name}>
             <strong>Bridge:</strong> {bridge.name}, 
             <strong> VLAN Filtering: </strong> 
@@ -289,9 +316,8 @@ const VLANManager = ({ onClose }) => {
                 />
             </label>
         </li>
-    ))}
-</ul>
-
+                        ))}
+                    </ul>
                 </>
             )}
         </div>

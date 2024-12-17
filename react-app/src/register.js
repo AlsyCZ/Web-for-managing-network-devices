@@ -13,8 +13,18 @@ const Register = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    const validatePassword = (password) => {
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        return passwordRegex.test(password);
+    };
+
     const handleRegister = async (e) => {
         e.preventDefault();
+
+        if (!validatePassword(password)) {
+            setError('Password must be at least 8 characters long, contain at least one number, and uppercase letter.');
+            return;
+        }
 
         if (password !== passwordretype) {
             setError('Passwords do not match!');
