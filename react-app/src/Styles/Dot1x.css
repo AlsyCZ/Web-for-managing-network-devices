@@ -1,0 +1,65 @@
+.dot1x-manager {
+    padding: 20px;
+}
+
+.dot1x-manager table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.dot1x-manager th, .dot1x-manager td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.dot1x-manager th {
+    background-color: #f2f2f2;
+}
+
+.dot1x-manager tr:hover {
+    background-color: #f1f1f1;
+}
+
+.dot1x-manager form {
+    margin-top: 20px;
+}
+
+.form-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.form-row label {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.form-row label:last-child {
+    margin-right: 0;
+}
+
+.dot1x-manager input, .dot1x-manager select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.dot1x-manager .submitbtn {
+    padding: 7px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+}

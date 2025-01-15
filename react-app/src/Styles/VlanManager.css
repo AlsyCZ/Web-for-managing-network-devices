@@ -47,3 +47,26 @@
 .vlan-manager .vlan-button:hover {
     background-color: #0056b3;
 }
+.vlan-manager {
+    padding: 20px;
+}
+
+.vlan-manager table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.vlan-manager th, .vlan-manager td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.vlan-manager th {
+    background-color: #f2f2f2;
+}
+
+.vlan-manager tr:hover {
+    background-color: #f1f1f1;
+}

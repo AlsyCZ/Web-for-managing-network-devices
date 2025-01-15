@@ -409,7 +409,7 @@ app.get('/api/get-bridges', async (req, res) => {
     }
 });
 app.post('/api/enable-vlan-filtering', async (req, res) => {
-    const { bridgeName, vlanFiltering } = req.body; // `bridgeName` je název bridge, `vlanFiltering` je true/false
+    const { bridgeName, vlanFiltering } = req.body;
     try {
         await client.menu('/interface/bridge').set({
             name: bridgeName,
@@ -423,7 +423,7 @@ app.post('/api/enable-vlan-filtering', async (req, res) => {
 });
 
 app.post('/api/enable-mvrp', async (req, res) => {
-    const { bridgeName, mvrp } = req.body; // `bridgeName` je název bridge, `mvrp` je true/false
+    const { bridgeName, mvrp } = req.body;
     try {
         await client.menu('/interface/bridge').set({
             name: bridgeName,
@@ -436,6 +436,75 @@ app.post('/api/enable-mvrp', async (req, res) => {
     }
 });
 
+app.get('/api/dot1x-data', async (req, res) => {
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        const dot1xData = await client.menu('/interface/dot1x/client').getAll();
+        res.json(dot1xData);
+    } catch (error) {
+        console.error('Error fetching Dot1x data:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+app.get('/api/eap-methods', async (req, res) => {
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        const eapMethods = await client.menu('/interface/dot1x/eap-methods').getAll();
+        res.json(eapMethods);
+    } catch (error) {
+        console.error('Error fetching EAP methods:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+
+app.get('/api/certificates', async (req, res) => {
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        const certificates = await client.menu('/certificate').getAll();
+        res.json(certificates);
+    } catch (error) {
+        console.error('Error fetching certificates:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+
+app.post('/api/create-dot1x-client', async (req, res) => {
+    const { interface, eapMethods, identity, password, anonIdentity, certificate } = req.body;
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        await client.menu('/interface/dot1x/client').add({
+            interface: interface,
+            'eap-methods': eapMethods,
+            'identity': identity,
+            'password': password,
+            'anon-identity': anonIdentity,
+            'certificate': certificate || ''
+        });
+
+        res.status(200).send('Dot1x client created successfully');
+    } catch (error) {
+        console.error('Error creating Dot1x client:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+
+app.delete('/api/delete-dot1x-client/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        await client.menu('/interface/dot1x/client').remove(id);
+
+        res.status(200).send('Dot1x client deleted successfully');
+    } catch (error) {
+        console.error('Error deleting Dot1x client:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
 process.on('SIGINT', async () => {
     if (client) {
         await api.close();

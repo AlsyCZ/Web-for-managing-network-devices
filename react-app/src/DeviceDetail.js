@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Styles/DeviceDetail.css';
+import { useNavigate } from 'react-router-dom'; // Add this line
 
 const DeviceDetail = ({ address, onLoadComplete }) => {
     const [deviceData, setDeviceData] = useState(null);
@@ -9,6 +10,15 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
     const intervalIdRef = useRef(null);
     const [firstUse, setFirstUse] = useState(true);
     const [firstUse2, setFirstUse2] = useState(true);
+
+    const navigate = useNavigate();
+    
+        useEffect(() => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/login');
+            }
+        }, [navigate]);
 
     useEffect(() => {
         const fetchData = async (addr) => {

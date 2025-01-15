@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import DeviceDetail from './DeviceDetail.js';
+import { useNavigate } from 'react-router-dom'; // Add this line
 import VLANManager from './VlanManager.js';
 import './Styles/table.css'; // Import CSS
 
@@ -9,6 +10,14 @@ const ArpTable = () => {
     const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
     const [isVlanModalOpen, setIsVlanModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+        }
+    }, [navigate]);
 
     const openVlanModal = () => setIsVlanModalOpen(true);
     const closeVlanModal = () => setIsVlanModalOpen(false);
@@ -85,9 +94,7 @@ const ArpTable = () => {
                         <th>Bridge Port</th>
                         <th>Host Name</th>
                         <th>Status</th>
-                        <th>Action
-                        <button className="vlan-button" onClick={openVlanModal}>Edit VLANs</button>
-                        </th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>

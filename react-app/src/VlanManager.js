@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Styles/VlanManager.css';
+import { useNavigate } from 'react-router-dom'; // Add this line
 
 const VLANManager = ({ onClose }) => {
     const [vlans, setVlans] = useState([]);
@@ -11,6 +12,15 @@ const VLANManager = ({ onClose }) => {
     const [interfaces, setInterfaces] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+        }
+    }, [navigate]);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -214,14 +224,28 @@ const VLANManager = ({ onClose }) => {
                 <p>Loading VLANs...</p>
             ) : (
                 <>
-                    <ul>
-                        {vlans.map((vlan, index) => (
-                            <li key={index}>
-                                VLAN ID: {vlan['vlanIds'] || 'N/A'}, Bridge: {vlan.bridge || 'N/A'}, Tagged: {vlan.tagged || 'None'}, Untagged: {vlan.untagged || 'None'}
-                                <button onClick={() => handleDeleteVlan(vlan.id)} className="vlan-button">Delete</button>
-                            </li>
-                        ))}
-                    </ul>
+                    <table>
+                <thead>
+                    <tr>
+                        <th>VLAN ID</th>
+                        <th>Bridge</th>
+                        <th>Tagged</th>
+                        <th>Untagged</th>  
+			            <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {vlans.map((vlan, index) => (
+                        <tr key={index}>
+                            <td>{vlan['vlanIds'] || 'N/A'}</td>
+                            <td>{vlan.bridge || 'N/A'}</td>
+                            <td>{vlan.tagged || 'None'}</td>
+                            <td>{vlan.untagged || 'None'}</td>
+                            <td><button onClick={() => handleDeleteVlan(vlan.id)} className="vlan-button">Delete</button></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
 
                     <div className="content" style={{ display: 'collumn', gap: '20px'}}>
                         <div>
