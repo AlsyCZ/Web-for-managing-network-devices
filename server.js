@@ -447,6 +447,21 @@ app.get('/api/dot1x-data', async (req, res) => {
         return res.status(500).send(`Error: ${error.message}`);
     }
 });
+app.get('/api/dot1x-server', async (req, res) => {
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        const dot1xData = await client.menu('/interface/dot1x/server').getAll();
+        
+        console.log("Dot1x Data from MikroTik:", dot1xData); // LOGOVÁNÍ
+
+        res.json(dot1xData);
+    } catch (error) {
+        console.error('Error fetching Dot1x data:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+
 app.get('/api/eap-methods', async (req, res) => {
     try {
         if (!client) throw new Error('Client not connected');
@@ -502,6 +517,20 @@ app.delete('/api/delete-dot1x-client/:id', async (req, res) => {
         res.status(200).send('Dot1x client deleted successfully');
     } catch (error) {
         console.error('Error deleting Dot1x client:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+
+app.delete('/api/delete-dot1x-server/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        await client.menu('/interface/dot1x/server').remove(id);
+
+        res.status(200).send('Dot1x client deleted successfully');
+    } catch (error) {
+        console.error('Error deleting Dot1x Server:', error.message);
         return res.status(500).send(`Error: ${error.message}`);
     }
 });

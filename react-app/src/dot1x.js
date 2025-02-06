@@ -5,6 +5,7 @@ import './Styles/Dot1x.css'; // Import CSS
 const Dot1x = ({ onClose }) => {
     const [dot1xEntries, setDot1xEntries] = useState([]);
     const [certificates, setCertificates] = useState([]);
+    const [dot1xServers, setDot1xServers] = useState([]);
     const [interfaces, setInterfaces] = useState([]);
     const [formData, setFormData] = useState({
         interface: '',
@@ -14,6 +15,12 @@ const Dot1x = ({ onClose }) => {
         anonIdentity: '',
         certificate: 'none',
     });
+
+    const [serverFormData, setServerFormData] = useState({
+        interface: '',
+        authTypes: '',
+        accounting: false,
+    });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -22,7 +29,9 @@ const Dot1x = ({ onClose }) => {
             navigate('/login');
         } else {
             fetchData();
+            fetchServerData();
             fetchCertificates();
+            fetchServerData();
             fetchInterfaces();
         }
     }, [navigate]);
@@ -45,6 +54,15 @@ const Dot1x = ({ onClose }) => {
             console.error('Error fetching interface data:', error);
         }
     };
+    const fetchServerData = async () => {
+        try {
+            const response = await fetch('/api/dot1x-server');
+            const data = await response.json();
+            setDot1xServers(data);
+        } catch (error) {
+            console.error('Error fetching Dot1x server data:', error);
+        }
+    };
     const fetchCertificates = async () => {
         try {
             const response = await fetch('/api/certificates');
@@ -60,6 +78,13 @@ const Dot1x = ({ onClose }) => {
         setFormData({ ...formData, [name]: value });
     };
 
+    const handleServerInputChange = (e) => {
+        const { name, type, checked, value } = e.target;
+        const newValue = type === 'checkbox' ? checked : value;
+        setServerFormData({ ...serverFormData, [name]: newValue });
+    };
+
+
     const handleDeleteEntry = async (id) => {
         try {
             const response = await fetch(`/api/delete-dot1x-client/${id}`, {
@@ -71,6 +96,21 @@ const Dot1x = ({ onClose }) => {
             }
 
             fetchData(); // Refresh data after deleting client
+        } catch (error) {
+            console.error('Error deleting Dot1x client:', error);
+        }
+    };
+    const handleDeleteServer = async (id) => {
+        try {
+            const response = await fetch(`/api/delete-dot1x-server/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete Dot1x client');
+            }
+
+            fetchServerData(); // Refresh data after deleting client
         } catch (error) {
             console.error('Error deleting Dot1x client:', error);
         }
@@ -94,6 +134,21 @@ const Dot1x = ({ onClose }) => {
             fetchData(); // Refresh data after creating new client
         } catch (error) {
             console.error('Error creating new Dot1x client:', error);
+        }
+    };
+
+    const handleServerSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('/api/create-dot1x-server', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverFormData),
+            });
+            if (!response.ok) throw new Error('Failed to create new Dot1x server');
+            fetchServerData();
+        } catch (error) {
+            console.error('Error creating new Dot1x server:', error);
         }
     };
 
@@ -188,6 +243,55 @@ const Dot1x = ({ onClose }) => {
                     </label>
                 </div>
                 <button className="submitbtn" type="submit">Create new Client</button>
+            </form>
+            <br></br>
+            <h2>Dot1x Server Manager</h2>
+            <table>
+            <thead>
+                <tr>
+                    <th>Interface</th>
+                    <th>Authentication types</th>
+                    <th>Accounting</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {dot1xServers.length === 0 ? (
+                    <tr>
+                        <td colSpan="4" style={{ textAlign: 'center' }}>No data</td>
+                    </tr>
+                ) : (
+                    dot1xServers.map((server, index) => (
+                        <tr key={index}>
+                            <td>{server.interface}</td>
+                            <td>{server.authTypes}</td>
+                            <td>{server.accounting ? 'Enabled' : 'Disabled'}</td>
+                            <td><button onClick={() => handleDeleteServer(server.id)} className="vlan-button">Delete</button></td>
+                        </tr>
+                    ))
+                )}
+            </tbody>
+            </table>
+            <h3>Create New Dot1x Server</h3>
+            <form onSubmit={handleServerSubmit} className="form-grid">
+                <label>
+                    Interface:
+                    <select name="interface" value={serverFormData.interface} onChange={handleServerInputChange} required>
+                        {interfaces.map((iface) => (
+                            <option key={iface.name} value={iface.name}>{iface.name}</option>
+                        ))}
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" name="dot1xAuth" checked={serverFormData.dot1xAuth} onChange={handleServerInputChange} /> Dot1X Authentication
+                </label>
+                <label>
+                    <input type="checkbox" name="macAuth" checked={serverFormData.macAuth} onChange={handleServerInputChange} /> MAC Authentication
+                </label>
+                <label>
+                    <input type="checkbox" name="accounting" checked={serverFormData.accounting} onChange={handleServerInputChange} /> Enable Accounting
+                </label>
+                <button className="submitbtn" type="submit">Create Dot1x Server</button>
             </form>
         </div>
     );
