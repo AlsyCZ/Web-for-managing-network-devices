@@ -452,8 +452,6 @@ app.get('/api/dot1x-server', async (req, res) => {
         if (!client) throw new Error('Client not connected');
 
         const dot1xData = await client.menu('/interface/dot1x/server').getAll();
-        
-        console.log("Dot1x Data from MikroTik:", dot1xData); // LOGOVÁNÍ
 
         res.json(dot1xData);
     } catch (error) {
@@ -462,14 +460,15 @@ app.get('/api/dot1x-server', async (req, res) => {
     }
 });
 
-app.get('/api/eap-methods', async (req, res) => {
+app.get('/api/radius', async (req, res) => {
     try {
         if (!client) throw new Error('Client not connected');
 
-        const eapMethods = await client.menu('/interface/dot1x/eap-methods').getAll();
-        res.json(eapMethods);
+        const dot1xData = await client.menu('/radius').getAll();
+
+        res.json(dot1xData);
     } catch (error) {
-        console.error('Error fetching EAP methods:', error.message);
+        console.error('Error fetching Radius data:', error.message);
         return res.status(500).send(`Error: ${error.message}`);
     }
 });
@@ -507,6 +506,66 @@ app.post('/api/create-dot1x-client', async (req, res) => {
     }
 });
 
+app.post('/api/create-dot1x-server', async (req, res) => {
+    const { interface, dot1xAuth, macAuth, macAuthMode, radiusMacFormat, accounting } = req.body;
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        // Správný formát auth-types
+        let authTypes = [];
+        if (dot1xAuth) authTypes.push('dot1x');
+        if (macAuth) authTypes.push('mac-auth');
+
+        await client.menu('/interface/dot1x/server').add({
+            interface: interface,
+            'auth-types': authTypes.join(","), // Správný formát pro MikroTik API
+            'mac-auth-mode': macAuthMode || '',
+            'radius-mac-format': radiusMacFormat || '',
+            'accounting': accounting ? 'yes' : 'no',
+        });
+
+        res.status(200).send('Dot1x server created successfully');
+    } catch (error) {
+        console.error('Error creating Dot1x server:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+app.post('/api/create-radius', async (req, res) => {
+    const {
+        ppp, hotspot, dhcp, dot1x, login, wireless, ipsec, address, protocol, secret, authenticationPort, accountingPort, timeout, requireMessageAuth, srcAddress,} = req.body;
+
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        // Připravíme pole služeb, které mají být povoleny
+        const services = [];
+        if (ppp) services.push('ppp');
+        if (hotspot) services.push('hotspot');
+        if (dhcp) services.push('dhcp');
+        if (dot1x) services.push('dot1x');
+        if (login) services.push('login');
+        if (wireless) services.push('wireless');
+        if (ipsec) services.push('ipsec');
+
+        // Vytvoření RADIUS serveru pomocí MikroTik API
+        await client.menu('/radius').add({
+            service: services.join(","), // Služby jako čárkou oddělený řetězec
+            address: address,
+            protocol: protocol,
+            secret: secret,
+            'authentication-port': authenticationPort,
+            'accounting-port': accountingPort,
+            timeout: timeout,
+            'require-message-auth': requireMessageAuth,
+            'src-address': srcAddress,
+        });
+
+        res.status(200).send('RADIUS server created successfully');
+    } catch (error) {
+        console.error('Error creating RADIUS server:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
 app.delete('/api/delete-dot1x-client/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -528,9 +587,22 @@ app.delete('/api/delete-dot1x-server/:id', async (req, res) => {
 
         await client.menu('/interface/dot1x/server').remove(id);
 
-        res.status(200).send('Dot1x client deleted successfully');
+        res.status(200).send('Dot1x server deleted successfully');
     } catch (error) {
         console.error('Error deleting Dot1x Server:', error.message);
+        return res.status(500).send(`Error: ${error.message}`);
+    }
+});
+app.delete('/api/delete-radius/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        if (!client) throw new Error('Client not connected');
+
+        await client.menu('/radius').remove(id);
+
+        res.status(200).send('Radius deleted successfully');
+    } catch (error) {
+        console.error('Error deleting radius Server:', error.message);
         return res.status(500).send(`Error: ${error.message}`);
     }
 });

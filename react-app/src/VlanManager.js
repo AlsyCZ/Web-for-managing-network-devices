@@ -262,7 +262,7 @@ const VLANManager = ({ onClose }) => {
                                 onChange={(e) => setSelectedBridge(e.target.value)}
                                 className="vlan-select"
                             >
-                                <option value="">Select Bridge</option>
+                                <option value="" selected disabled hidden>Select Bridge</option>
                                 {bridges.map((bridge) => (
                                     <option key={bridge.name} value={bridge.name}>{bridge.name}</option>
                                 ))}
@@ -279,7 +279,7 @@ const VLANManager = ({ onClose }) => {
                                         onChange={(e) => handleAddInterface(e.target.value, 'tagged')}
                                         className="vlan-select"
                                     >
-                                        <option value="">Select Interface</option>
+                                        <option value="" selected disabled hidden>Select Interface</option>
                                         {interfaces.map((iface) => (
                                             <option key={iface.name} value={iface.name}>{iface.name}</option>
                                         ))}
@@ -299,7 +299,7 @@ const VLANManager = ({ onClose }) => {
                                         onChange={(e) => handleAddInterface(e.target.value, 'untagged')}
                                         className="vlan-select"
                                     >
-                                        <option value="">Select Interface</option>
+                                        <option value="" selected disabled hidden>Select Interface</option>
                                         {interfaces.map((iface) => (
                                             <option key={iface.name} value={iface.name}>{iface.name}</option>
                                         ))}
