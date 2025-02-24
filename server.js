@@ -4,21 +4,21 @@ const { RouterOSClient } = require('routeros-client');
 const path = require('path');
 const dotenv = require('dotenv');
 const mysql = require('mysql2');
-const app = express();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
+const app = express();
 app.use(express.json());
+
+dotenv.config();
 
 const corsOptions = {
     origin: 'http://localhost:3000',
     methods: 'GET,POST,DELETE',
     allowedHeaders: 'Content-Type, Authorization',
 };
-
 app.use(cors(corsOptions));
-
-dotenv.config();
 
 const api = new RouterOSClient({
     host: process.env.API_HOST,
@@ -34,7 +34,6 @@ let isConnecting = false;
 
 const connectToApi = async () => {
     if (isConnecting || client) return;
-
     isConnecting = true;
     try {
         client = await api.connect();
@@ -47,9 +46,7 @@ const connectToApi = async () => {
     }
 };
 
-const keepAliveInterval = 30000;
-
-const sendKeepAlive = async () => {
+setInterval(async () => {
     if (client) {
         try {
             await client.menu('/system/resource').getAll();
@@ -59,17 +56,13 @@ const sendKeepAlive = async () => {
             connectToApi();
         }
     }
-};
-
-setInterval(sendKeepAlive, keepAliveInterval);
+}, 30000);
 
 require('events').EventEmitter.defaultMaxListeners = 0;
-
 app.use(express.static(path.join(__dirname, 'public')));
-
 connectToApi().catch(error => console.error('Initial connection error:', error));
 
-//MYSQL database
+// MySQL database connection
 const db = mysql.createConnection({ 
     host: 'localhost', 
     user: 'root', 
@@ -85,60 +78,93 @@ db.connect(err => {
     }
 });
 
+// Email transporter
+const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
-    
-    // Check if username or email already exists
     db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
-        if (err) {
-            console.error('Error querying the database:', err);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-
-        if (results.length > 0) {
-            return res.status(400).json({ error: 'Username or email already exists' });
-        }
-
+        if (err) return res.status(500).json({ error: 'Database error' });
+        if (results.length > 0) return res.status(400).json({ error: 'Username or email already exists' });
+        
         try {
             const hashedPassword = await bcrypt.hash(password, 10);
-            db.query('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [username, hashedPassword, email], (err, results) => {
-                if (err) {
-                    console.error('Error inserting user:', err);
-                    return res.status(500).json({ error: 'Internal server error' });
-                } else {
-                    return res.status(201).json({ message: 'User registered' });
-                }
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            db.query('INSERT INTO users (username, password, email, otp, verified) VALUES (?, ?, ?, ?, ?)', [username, hashedPassword, email, otp, 0], (err) => {
+                if (err) return res.status(500).json({ error: 'Database error' });
+                
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: email,
+                    subject: 'Your OTP Code',
+                    text: `Your OTP code is: ${otp}`
+                };
+                
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        console.error('Email sending error:', error);
+                        return res.status(500).json({ error: 'Email sending failed' });
+                    }
+                    console.log('Email sent:', info.response);
+                    res.status(201).json({ message: 'User registered. Check your email for OTP.' });
+                });
             });
         } catch (error) {
-            console.error('Error hashing password:', error);
-            return res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ error: 'Server error' });
         }
     });
 });
 
-app.post('/login', (req, res) => { 
-    const { username, password } = req.body; 
-    db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => { 
-        if (err) { 
-            res.status(500).json({ error: err.message }); 
-        } else if (results.length === 0 || !(await bcrypt.compare(password, results[0].password))) {
-            res.status(401).json({ message: 'Invalid credentials' }); 
-        } else { 
-            const token = jwt.sign({ id: results[0].id }, 'your_jwt_secret', { expiresIn: '1h' }); 
-            res.json({ token }); } 
-    }); 
+app.post('/verify', (req, res) => {
+    const { otp } = req.body;
+    db.query('SELECT * FROM users WHERE otp = ? AND verified = 0', [otp], (err, results) => {
+        if (err) return res.status(500).json({ message: 'Chyba serveru' });
+
+        if (results.length === 0) return res.status(400).json({ message: 'Neplatný OTP kód' });
+
+        db.query('UPDATE users SET verified = 1 WHERE otp = ?', [otp], (err) => {
+            if (err) return res.status(500).json({ message: 'Chyba při ověřování' + err });
+            res.json({ message: 'Úspěšně ověřeno' });
+        });
+    });
+});
+
+
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (results.length === 0 || !(await bcrypt.compare(password, results[0].password))) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        if (!results[0].verified) {
+            // Uživatel není ověřený, vrátíme speciální flag
+            return res.status(403).json({ message: 'Email not verified', verified: false });
+        }
+
+        // Uživatel je ověřený, vygenerujeme token
+        const token = jwt.sign({ id: results[0].id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token, verified: true });
+    });
 });
 
 const verifyToken = (req, res, next) => { 
     const token = req.headers['authorization']; 
-        if (!token) { 
-            return res.status(403).json({ message: 'No token provided' }); 
-        } 
-        jwt.verify(token.split(' ')[1], 'your_jwt_secret', (err, decoded) => { if (err) { 
-            return res.status(500).json({ message: 'Failed to authenticate token' }); 
-        } 
-        req.userId = decoded.id; next(); 
-    }); 
+    if (!token) return res.status(403).json({ message: 'No token provided' });
+    jwt.verify(token.split(' ')[1], process.env.JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(500).json({ message: 'Failed to authenticate token' });
+        req.userId = decoded.id;
+        next();
+    });
 };
 
 app.get('/username', verifyToken, (req, res) => { 

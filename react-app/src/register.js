@@ -33,7 +33,7 @@ const Register = () => {
 
         try {
             await axios.post('http://localhost:3001/register', { username, password, email });
-            navigate('/');
+            navigate('/verify');
         } catch (error) {
             console.error('Registration failed:', error);
             if (error.response && error.response.data && error.response.data.error) {
