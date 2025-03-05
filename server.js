@@ -654,11 +654,12 @@ process.on('SIGINT', async () => {
 // Serve React build
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'react-app/build')));
-  
+
+    // Posíláme index.html pro všechny cesty
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'react-app/src', 'index.js'));
+        res.sendFile(path.join(__dirname, 'react-app/build', 'index.html'));
     });
-  }
+}
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
