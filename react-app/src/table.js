@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import DeviceDetail from './DeviceDetail.js';
-import { useNavigate } from 'react-router-dom'; // Add this line
+import { useNavigate } from 'react-router-dom';
 import VLANManager from './VlanManager.js';
-import './Styles/table.css'; // Import CSS
+import './Styles/table.css';
 
 const ArpTable = () => {
     const [arpEntries, setArpEntries] = useState([]);
@@ -21,16 +21,16 @@ const ArpTable = () => {
 
     const openVlanModal = () => setIsVlanModalOpen(true);
     const closeVlanModal = () => setIsVlanModalOpen(false);
+    
     const fetchData = async () => {
         try {
             const response = await fetch('/api/raw-data');
-
-            const data = await response.json();
-            if(!response.ok){
-                console.error('Error while getting data:', error);
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status} ${response.statusText}`);
             }
+            const data = await response.json();
             const arpTable = data.arpTable
-                .filter(arp => arp['interface'] !== 'ether1-WAN') // Filter WAN entry for safety!
+                .filter(arp => arp['interface'] !== 'ether1-WAN')
                 .map((arp) => {
                     const lease = data.dhcpLeases.find(lease => lease['address'] === arp['address']);
                     const bridge = data.bridgeHosts.find(host => host['macAddress'] === arp['macAddress']);
@@ -48,6 +48,7 @@ const ArpTable = () => {
             setArpEntries(arpTable);
         } catch (error) {
             console.error('Error while getting data:', error);
+            alert(`Error while fetching data: ${error.message}`);
         }
     };
 
@@ -60,14 +61,14 @@ const ArpTable = () => {
     const handleDelete = async (address) => {
         try {
             const response = await fetch(`/api/delete-arp/${address}`, { method: 'DELETE' });
-            if (response.ok) {
-                console.log('ARP lease was deleted');
-                setArpEntries(arpEntries.filter(entry => entry.address !== address));
-            } else {
-                console.error('Erroe while deletting ARP lease', error);
+            if (!response.ok) {
+                throw new Error(`Failed to delete ARP: ${response.status} ${response.statusText}`);
             }
+            console.log('ARP lease was deleted');
+            setArpEntries(arpEntries.filter(entry => entry.address !== address));
         } catch (error) {
-            console.error('Erroe while deletting ARP lease:', error);
+            console.error('Error while deleting ARP lease:', error);
+            alert(`Error while deleting ARP lease: ${error.message}`);
         }
     };
 
@@ -81,10 +82,6 @@ const ArpTable = () => {
         setIsDeviceModalOpen(false);
         setLoading(false);
         setSelectedAddress(null);
-    };
-
-    const handleLoadComplete = () => {
-        setLoading(false);
     };
 
     return (
@@ -119,25 +116,6 @@ const ArpTable = () => {
                     ))}
                 </tbody>
             </table>
-
-            {isDeviceModalOpen && (
-                <div className="modalOverlayStyle">
-                    <div className="modalStyle">
-                        {!loading && (
-                            <button className="closeButtonStyle" onClick={closeModal}>X</button>
-                        )}
-                        <DeviceDetail address={selectedAddress} onLoadComplete={handleLoadComplete} />
-                    </div>
-                </div>
-            )}
-
-            {isVlanModalOpen && (
-                <div className="modalOverlayStyle">
-                    <div className="modalStyle">
-                        <VLANManager onClose={closeVlanModal} />
-                    </div>
-                </div>
-            )}
         </>
     );
 };
