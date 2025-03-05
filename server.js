@@ -202,7 +202,6 @@ app.get('/api/raw-data', async (req, res) => {
     try {
         await connectToApi();
         if (!client) throw new Error('Client not connected');
-
         const arpTable = await client.menu('/ip/arp').getAll();
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
         const bridgeHosts = await client.menu('/interface bridge host').getAll();

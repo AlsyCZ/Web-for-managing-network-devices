@@ -23,8 +23,12 @@ const ArpTable = () => {
     const closeVlanModal = () => setIsVlanModalOpen(false);
     const fetchData = async () => {
         try {
-            const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/raw-data');
+            const response = await fetch('/api/raw-data');
+
             const data = await response.json();
+            if(!response.ok){
+                console.error('Error while getting data:', error);
+            }
             const arpTable = data.arpTable
                 .filter(arp => arp['interface'] !== 'ether1-WAN') // Filter WAN entry for safety!
                 .map((arp) => {
@@ -55,12 +59,12 @@ const ArpTable = () => {
 
     const handleDelete = async (address) => {
         try {
-            const response = await fetch(`https://web-for-managing-network-devices-production.up.railway.app/api/delete-arp/${address}`, { method: 'DELETE' });
+            const response = await fetch(`/api/delete-arp/${address}`, { method: 'DELETE' });
             if (response.ok) {
                 console.log('ARP lease was deleted');
                 setArpEntries(arpEntries.filter(entry => entry.address !== address));
             } else {
-                console.error('Erroe while deletting ARP lease');
+                console.error('Erroe while deletting ARP lease', error);
             }
         } catch (error) {
             console.error('Erroe while deletting ARP lease:', error);
