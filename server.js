@@ -100,7 +100,10 @@ if (process.env.NODE_ENV === 'production') {
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
     db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
+        if (err) {
+            console.error('Database error:', err); // Logování chyby
+            return res.status(500).json({ error: 'Database error' });
+        }
         if (results.length > 0) return res.status(400).json({ error: 'Username or email already exists' });
         
         try {
