@@ -18,7 +18,7 @@ const Navbar = () => {
                 if (!token) {
                     navigate('/login');
                 } else {
-                    const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/username', {
+                    const response = await fetch('https://projekt.alsy.cz/username', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const data = await response.json();

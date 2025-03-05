@@ -9,7 +9,7 @@ const Verify = () => {
 
     const handleVerify = async () => {
         try {
-            const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/verify', {
+            const response = await fetch('https://projekt.alsy.cz/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ otp })

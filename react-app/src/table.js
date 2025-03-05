@@ -24,7 +24,7 @@ const ArpTable = () => {
     
     const fetchData = async () => {
         try {
-            const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/raw-data');
+            const response = await fetch('https://projekt.alsy.cz/api/raw-data');
             if (!response.ok) {
                 throw new Error(`Server error: ${response.status} ${response.statusText}`);
             }
