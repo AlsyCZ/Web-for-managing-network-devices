@@ -115,6 +115,16 @@ const ArpTable = () => {
                     ))}
                 </tbody>
             </table>
+            {isDeviceModalOpen && (
+    <div className="modalOverlayStyle">
+        <div className="modalStyle">
+            {!loading && (
+                <button className="closeButtonStyle" onClick={closeModal}>X</button>
+            )}
+            <DeviceDetail address={selectedAddress} onLoadComplete={handleLoadComplete} />
+        </div>
+    </div>
+)}
         </>
     );
 };
