@@ -1,0 +1,11 @@
+[providers]
+node = "18.x"
+
+[build]
+command = [
+  "npm install",
+  "cd react-app && npm install && npm run build"
+]
+
+[start]
+command = "node server.js"

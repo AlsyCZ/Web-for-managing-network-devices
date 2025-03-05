@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "proxy": "http://localhost:3001",
-  "scripts": {
-    "build": "npm install --prefix client && npm run build --prefix client",
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": "18.x",
-    "npm": "9.x"
-  },
+    "scripts": {
+      "start": "node server.js",
+      "build": "cd react-app && npm install && npm run build",
+      "heroku-postbuild": "npm run build"
+    },
+    "engines": {
+      "node": "18.x"
+    },
   "keywords": [],
   "author": "",
   "license": "ISC",
