@@ -73,7 +73,7 @@ const VLANManager = ({ onClose }) => {
         }
 
         try {
-            const response = await fetch('http://localhost:3001/api/create-vlan', {
+            const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/create-vlan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -94,7 +94,7 @@ const VLANManager = ({ onClose }) => {
                 setUntaggedInterfaces([]);
                 setError(null);
 
-                const updatedVlansResponse = await fetch('http://localhost:3001/api/get-vlans');
+                const updatedVlansResponse = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/get-vlans');
                 const updatedVlans = await updatedVlansResponse.json();
                 setVlans(updatedVlans);
             }
@@ -105,7 +105,7 @@ const VLANManager = ({ onClose }) => {
 
     const handleDeleteVlan = async (vlanId) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/delete-vlan/${vlanId}`, {
+            const response = await fetch(`https://web-for-managing-network-devices-production.up.railway.app/api/delete-vlan/${vlanId}`, {
                 method: 'DELETE',
             });
 
@@ -113,7 +113,7 @@ const VLANManager = ({ onClose }) => {
                 const errorData = await response.json();
                 setError(errorData.message || 'Failed to delete VLAN');
             } else {
-                const updatedVlansResponse = await fetch('http://localhost:3001/api/get-vlans');
+                const updatedVlansResponse = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/get-vlans');
                 const updatedVlans = await updatedVlansResponse.json();
                 setVlans(updatedVlans);
             }
@@ -128,7 +128,7 @@ const VLANManager = ({ onClose }) => {
                 await handleCheckboxChangeMvrp(bridge.name, false);
             }
         try {
-            const response = await fetch('http://localhost:3001/api/enable-vlan-filtering', {
+            const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/enable-vlan-filtering', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -157,12 +157,12 @@ const VLANManager = ({ onClose }) => {
             setLoading(true);
     
             // Znovu načtěte mosty
-            const bridgesResponse = await fetch('http://localhost:3001/api/get-bridges');
+            const bridgesResponse = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/get-bridges');
             const bridges = await bridgesResponse.json();
             setBridges(bridges);
     
             // Znovu načtěte VLANy
-            const vlansResponse = await fetch('http://localhost:3001/api/get-vlans');
+            const vlansResponse = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/get-vlans');
             const vlans = await vlansResponse.json();
             setVlans(vlans);
     
@@ -181,7 +181,7 @@ const VLANManager = ({ onClose }) => {
                 await handleCheckboxChangeVlan(bridge.name, true);
             }
     
-            const response = await fetch('http://localhost:3001/api/enable-mvrp', {
+            const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/enable-mvrp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
