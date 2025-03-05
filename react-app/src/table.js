@@ -24,10 +24,7 @@ const ArpTable = () => {
     
     const fetchData = async () => {
         try {
-            const response = await fetch('/api/raw-data');
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status} ${response.statusText}`);
-            }
+            const response = await fetch('https://web-for-managing-network-devices-production.up.railway.app/api/raw-data');
             const data = await response.json();
             const arpTable = data.arpTable
                 .filter(arp => arp['interface'] !== 'ether1-WAN')
