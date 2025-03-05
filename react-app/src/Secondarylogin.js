@@ -5,9 +5,7 @@ const SecondaryLogin = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        console.log('SecondaryLogin component mounted'); // Logování
         const secondaryLogin = () => {
-            console.log('Secondary login prompt triggered'); // Logování
             // Zkontrolujte, zda uživatel již provedl sekundární přihlášení
             const isSecondaryLoggedIn = localStorage.getItem('isSecondaryLoggedIn');
 
@@ -21,13 +19,10 @@ const SecondaryLogin = () => {
                 ) {
                     alert('Login successful!');
                     localStorage.setItem('isSecondaryLoggedIn', 'true'); // Uložení stavu
-                    navigate('/login'); // Přesměrování na přihlašovací stránku
                 } else {
                     alert('Invalid username or password. Access denied.');
-                    // Nic se neděje, zůstane bílá obrazovka
+                    navigate('/login'); // Přesměrování na přihlašovací stránku
                 }
-            } else {
-                navigate('/login'); // Uživatel již prošel sekundárním přihlášením
             }
         };
 
