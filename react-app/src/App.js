@@ -7,7 +7,7 @@ import Verify from './verify';
 import DeviceDetail from './DeviceDetail';
 import LayoutWithNavbar from './LayoutWithNavbar';
 import LayoutWithoutNavbar from './LayoutWithoutNavbar';
-import SecondaryLogin from './SecondaryLogin'; // Import nové komponenty
+import SecondaryLogin from './Secondarylogin'; // Import nové komponenty
 
 const App = () => {
     return (
