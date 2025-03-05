@@ -4,8 +4,12 @@
   "main": "index.js",
   "proxy": "http://localhost:3001",
   "scripts": {
-    "build": "cd ./client && npm install && npm run build",
+    "build": "npm install --prefix client && npm run build --prefix client",
     "start": "node server.js"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
   },
   "keywords": [],
   "author": "",
