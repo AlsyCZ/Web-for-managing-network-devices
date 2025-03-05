@@ -8,14 +8,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// Serve React build
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'react-app/build')));
-  
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'react-app/build', 'index.html'));
-    });
-  }
+
 
 const app = express();
 app.use(express.json());
@@ -95,6 +88,15 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS
     }
 });
+
+// Serve React build
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'react-app/build')));
+  
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'react-app/build', 'index.html'));
+    });
+  }
 
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
@@ -652,7 +654,7 @@ process.on('SIGINT', async () => {
 app.listen(3001, () => {
     console.log('Server is running at http://localhost:3001');
 });
-const PORT = 3000;
+const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

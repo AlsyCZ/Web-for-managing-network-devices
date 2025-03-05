@@ -1,27 +1,25 @@
 {
   "name": "projekt",
   "version": "1.0.0",
-  "main": "index.js",
-  "proxy": "http://localhost:3001",
-    "scripts": {
-      "start": "node server.js",
+  "scripts": {
+    "start": "node server.js",
     "build": "cd react-app && npm install && npm run build",
-    "install-client": "cd react-app && npm install",
     "heroku-postbuild": "npm run build"
-    },
-    "engines": {
-      "node": "18.x"
-    },
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.9",
+    "express": "^4.18.2",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mikronode": "^2.3.11",
     "mysql": "^2.18.1",
