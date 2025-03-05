@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Table from './table';
 import Login from './login';
 import Register from './register';
@@ -10,7 +10,6 @@ import LayoutWithoutNavbar from './LayoutWithoutNavbar';
 
 const App = () => {
     const [isSecondaryLoggedIn, setIsSecondaryLoggedIn] = useState(false);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const secondaryLogin = () => {
