@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Table from './table';
 import Login from './login';
 import Register from './register';
@@ -7,37 +7,12 @@ import Verify from './verify';
 import DeviceDetail from './DeviceDetail';
 import LayoutWithNavbar from './LayoutWithNavbar';
 import LayoutWithoutNavbar from './LayoutWithoutNavbar';
+import SecondaryLogin from './SecondaryLogin'; // Import nové komponenty
 
 const App = () => {
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        const secondaryLogin = () => {
-            // Zkontrolujte, zda uživatel již provedl sekundární přihlášení
-            const isSecondaryLoggedIn = localStorage.getItem('isSecondaryLoggedIn');
-
-            if (!isSecondaryLoggedIn) {
-                const username = prompt('Please enter your username:');
-                const password = prompt('Please enter your password:');
-
-                if (
-                    username === process.env.REACT_APP_SECONDARY_USERNAME &&
-                    password === process.env.REACT_APP_SECONDARY_PASSWORD
-                ) {
-                    alert('Login successful!');
-                    localStorage.setItem('isSecondaryLoggedIn', 'true'); // Uložení stavu
-                } else {
-                    alert('Invalid username or password. Access denied.');
-                    navigate('/login'); // Přesměrování na přihlašovací stránku
-                }
-            }
-        };
-
-        secondaryLogin();
-    }, [navigate]);
-
     return (
         <Router>
+            <SecondaryLogin /> {/* Přidejte sem */}
             <Routes>
                 <Route element={<LayoutWithoutNavbar />}>
                     <Route path="/" element={<Login />} />
