@@ -5,8 +5,9 @@
   "proxy": "http://localhost:3001",
     "scripts": {
       "start": "node server.js",
-      "build": "cd react-app && npm install && npm run build",
-      "heroku-postbuild": "npm run build"
+    "build": "cd react-app && npm install && npm run build",
+    "install-client": "cd react-app && npm install",
+    "heroku-postbuild": "npm run build"
     },
     "engines": {
       "node": "18.x"

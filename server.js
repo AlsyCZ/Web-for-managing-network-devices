@@ -8,6 +8,15 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
+// Serve React build
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'react-app/build')));
+  
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'react-app/build', 'index.html'));
+    });
+  }
+
 const app = express();
 app.use(express.json());
 
@@ -643,13 +652,7 @@ process.on('SIGINT', async () => {
 app.listen(3001, () => {
     console.log('Server is running at http://localhost:3001');
 });
-
-const path = require('path');
-
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'react-app/build')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'react-app', 'build', 'index.html'));
-  });
-}
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
