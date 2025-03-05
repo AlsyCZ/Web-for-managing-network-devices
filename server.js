@@ -63,13 +63,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 connectToApi().catch(error => console.error('Initial connection error:', error));
 
 // MySQL database connection
-const db = mysql.createConnection({ 
+const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT
-});
+    port: process.env.DB_PORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10, // Maximální počet připojení v poolu
+    queueLimit: 0
+  });
 
 db.connect(err => {
     if (err) {
@@ -99,7 +102,7 @@ if (process.env.NODE_ENV === 'production') {
 
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
-    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
+    pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
         if (err) {
             console.error('Database error:', err); // Logování chyby
             return res.status(500).json({ error: 'Database error' });
@@ -109,7 +112,7 @@ app.post('/register', async (req, res) => {
         try {
             const hashedPassword = await bcrypt.hash(password, 10);
             const otp = Math.floor(100000 + Math.random() * 900000);
-            db.query('INSERT INTO users (username, password, email, otp, verified) VALUES (?, ?, ?, ?, ?)', [username, hashedPassword, email, otp, 0], (err) => {
+            pool.query('INSERT INTO users (username, password, email, otp, verified) VALUES (?, ?, ?, ?, ?)', [username, hashedPassword, email, otp, 0], (err) => {
                 if (err) return res.status(500).json({ error: 'Database error' });
                 
                 const mailOptions = {
@@ -136,12 +139,12 @@ app.post('/register', async (req, res) => {
 
 app.post('/verify', (req, res) => {
     const { otp } = req.body;
-    db.query('SELECT * FROM users WHERE otp = ? AND verified = 0', [otp], (err, results) => {
+    pool.query('SELECT * FROM users WHERE otp = ? AND verified = 0', [otp], (err, results) => {
         if (err) return res.status(500).json({ message: 'Chyba serveru' });
 
         if (results.length === 0) return res.status(400).json({ message: 'Neplatný OTP kód' });
 
-        db.query('UPDATE users SET verified = 1 WHERE otp = ?', [otp], (err) => {
+        pool.query('UPDATE users SET verified = 1 WHERE otp = ?', [otp], (err) => {
             if (err) return res.status(500).json({ message: 'Chyba při ověřování' + err });
             res.json({ message: 'Úspěšně ověřeno' });
         });
@@ -152,7 +155,7 @@ app.post('/verify', (req, res) => {
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
-    db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+    pool.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
 
         if (results.length === 0 || !(await bcrypt.compare(password, results[0].password))) {
@@ -181,7 +184,7 @@ const verifyToken = (req, res, next) => {
 };
 
 app.get('/username', verifyToken, (req, res) => { 
-    db.query('SELECT username FROM users WHERE id = ?', [req.userId], (err, results) => { 
+    pool.query('SELECT username FROM users WHERE id = ?', [req.userId], (err, results) => { 
         if (err) { 
             return res.status(500).json({ error: 'Internal server error' }); 
         } 
