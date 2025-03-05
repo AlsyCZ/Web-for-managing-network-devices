@@ -12,7 +12,7 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:3001/login', { username, password });
+            const response = await axios.post('https://web-for-managing-network-devices-production.up.railway.app/login', { username, password });
 
             if (response.data.verified === false) {
                 // Uživatel není ověřený, přesměrujeme na verify.js

@@ -32,7 +32,7 @@ const Register = () => {
         }
 
         try {
-            await axios.post('http://localhost:3001/register', { username, password, email });
+            await axios.post('https://web-for-managing-network-devices-production.up.railway.app/register', { username, password, email });
             navigate('/verify');
         } catch (error) {
             console.error('Registration failed:', error);
