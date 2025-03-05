@@ -141,3 +141,4 @@ const ArpTable = () => {
         </>
     );
 };
+export default ArpTable;
