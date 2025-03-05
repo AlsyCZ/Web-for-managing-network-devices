@@ -1,17 +1,18 @@
-# nixpacks.toml
 [[providers]]
 name = "node"
 version = "18.x"
 
 [phases.setup]
-nix_pkgs = ["nodejs-18_x", "python3"]  # Python je často potřeba pro některé npm balíčky
+nix_pkgs = ["nodejs-18_x"]
 
 [phases.install]
-commands = ["npm install"]
+commands = [
+    "npm install",
+    "cd react-app && npm install"
+]
 
 [phases.build]
 commands = [
-    "cd react-app && npm install",
     "cd react-app && npm run build"
 ]
 
