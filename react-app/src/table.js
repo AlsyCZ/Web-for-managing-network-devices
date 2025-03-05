@@ -72,6 +72,7 @@ const ArpTable = () => {
     };
 
     const handleEdit = (address) => {
+        console.log('Edit button clicked, address:', address); // Logování
         setSelectedAddress(address);
         setIsDeviceModalOpen(true);
         setLoading(true);
@@ -115,16 +116,7 @@ const ArpTable = () => {
                     ))}
                 </tbody>
             </table>
-            {isDeviceModalOpen && (
-    <div className="modalOverlayStyle">
-        <div className="modalStyle">
-            {!loading && (
-                <button className="closeButtonStyle" onClick={closeModal}>X</button>
-            )}
-            <DeviceDetail address={selectedAddress} onLoadComplete={handleLoadComplete} />
-        </div>
-    </div>
-)}
+            
         </>
     );
 };
