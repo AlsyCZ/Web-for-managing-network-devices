@@ -193,16 +193,13 @@ app.get('/username', verifyToken, (req, res) => {
 
 app.get('/api/raw-data', async (req, res) => {
     try {
-        console.log('Fetching raw data from MikroTik...');
         await connectToApi();
         if (!client) throw new Error('Client not connected');
         
-        console.log('Connected to MikroTik. Fetching data...');
         const arpTable = await client.menu('/ip/arp').getAll();
         const dhcpLeases = await client.menu('/ip/dhcp-server/lease').getAll();
         const bridgeHosts = await client.menu('/interface bridge host').getAll();
         
-        console.log('Data fetched successfully. Sending response.');
         res.json({ arpTable, dhcpLeases, bridgeHosts });
     } catch (error) {
         console.error('Error connecting to MikroTik:', error);

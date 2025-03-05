@@ -27,9 +27,9 @@ const VLANManager = ({ onClose }) => {
             try {
                 setLoading(true);
                 const [bridgesResponse, interfacesResponse, vlansResponse] = await Promise.all([
-                    fetch('http://localhost:3001/api/get-bridges'),
-                    fetch('http://localhost:3001/api/get-interfaces'),
-                    fetch('http://localhost:3001/api/get-vlans'),
+                    fetch('https://web-for-managing-network-devices-production.up.railway.app/api/get-bridges'),
+                    fetch('https://web-for-managing-network-devices-production.up.railway.app/api/get-interfaces'),
+                    fetch('https://web-for-managing-network-devices-production.up.railway.app/api/get-vlans'),
                 ]);
 
                 const bridges = await bridgesResponse.json();
