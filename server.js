@@ -70,15 +70,17 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME,
     port: process.env.DB_PORT || 3306,
     waitForConnections: true,
-    connectionLimit: 10, // Maximální počet připojení v poolu
+    connectionLimit: 10, // Maximum number of connections in the pool
     queueLimit: 0
-  });
+});
 
-db.connect(err => {
+// Test the connection by getting a connection from the pool
+pool.getConnection((err, connection) => {
     if (err) {
         console.error('Error connecting to the database:', err);
     } else {
         console.log('Connected to the MySQL database');
+        connection.release(); // Always release the connection back to the pool
     }
 });
 
