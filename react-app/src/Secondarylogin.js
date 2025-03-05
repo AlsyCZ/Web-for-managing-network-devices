@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const SecondaryLogin = () => {
     const navigate = useNavigate();
-    const [accessDenied, setAccessDenied] = useState(false);
 
     useEffect(() => {
+        console.log('SecondaryLogin component mounted'); // Logování
         const secondaryLogin = () => {
+            console.log('Secondary login prompt triggered'); // Logování
             // Zkontrolujte, zda uživatel již provedl sekundární přihlášení
             const isSecondaryLoggedIn = localStorage.getItem('isSecondaryLoggedIn');
 
@@ -23,7 +24,7 @@ const SecondaryLogin = () => {
                     navigate('/login'); // Přesměrování na přihlašovací stránku
                 } else {
                     alert('Invalid username or password. Access denied.');
-                    setAccessDenied(true); // Zobrazí zprávu "Přístup odepřen"
+                    // Nic se neděje, zůstane bílá obrazovka
                 }
             } else {
                 navigate('/login'); // Uživatel již prošel sekundárním přihlášením
@@ -32,10 +33,6 @@ const SecondaryLogin = () => {
 
         secondaryLogin();
     }, [navigate]);
-
-    if (accessDenied) {
-        return <div style={{ textAlign: 'center', marginTop: '50px' }}>Přístup odepřen</div>;
-    }
 
     return null; // Tato komponenta nic nerenderuje
 };
