@@ -115,6 +115,7 @@ app.post('/register', async (req, res) => {
             const hashedPassword = await bcrypt.hash(password, 10);
             const otp = Math.floor(100000 + Math.random() * 900000);
             pool.query('INSERT INTO users (username, password, email, otp, verified) VALUES (?, ?, ?, ?, ?)', [username, hashedPassword, email, otp, 0], (err) => {
+                console.error('Database error:', err); // Logování chyby
                 if (err) return res.status(500).json({ error: 'Database error' });
                 
                 const mailOptions = {
