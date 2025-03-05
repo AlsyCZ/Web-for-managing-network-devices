@@ -20,47 +20,47 @@ const DeviceDetail = ({ address, onLoadComplete }) => {
             }
         }, [navigate]);
 
-        useEffect(() => {
-            const fetchData = async (addr) => {
-                console.log('Fetching data for address:', addr);
-                try {
-                    const response = await fetch(`https://web-for-managing-network-devices-production.up.railway.app/api/device-detail/${addr}`);
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch data');
-                    }
-                    const data = await response.json();
-                    console.log('Fetched data:', data);
-                    onLoadComplete();
-        
-                    if (firstUse2) {
-                        setDeviceData(data);
-                        setFirstUse2(false);
-                    }
-                    if (data.status === 'bound' && data.address === customIp) {
-                        console.log('The device has switched to bound with a new IP, data updated.');
-                        setDeviceData(data);
-                        clearInterval(intervalIdRef.current);
-                    }
-                } catch (error) {
-                    console.error('Error while loading data:', error);
+    useEffect(() => {
+        const fetchData = async (addr) => {
+            console.log('Fetching data for address:', addr);
+            try {
+                const response = await fetch(`/api/device-detail/${addr}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
                 }
-            };
-        
-            if (firstUse) {
-                fetchData(address);
-                setFirstUse(false);
+                const data = await response.json();
+                console.log('Fetched data:', data);
+                onLoadComplete();
+
+                if(firstUse2){
+                    setDeviceData(data);  
+                    setFirstUse2(false);
+                }
+                if (data.status === 'bound' && data.address === customIp) {
+                    console.log('The device has switched to bound with a new IP, data updated.');
+                    setDeviceData(data);  
+                    clearInterval(intervalIdRef.current);
+                }
+            } catch (error) {
+                console.error('Error while loading data:', error);
             }
-        
-            intervalIdRef.current = setInterval(() => {
-                const ipToCheck = customIp || address;
-                console.log('Checking the device status for IP:', ipToCheck);
-                fetchData(ipToCheck);
-            }, 5000);
-        
-            return () => {
-                clearInterval(intervalIdRef.current);
-            };
-        }, [address, customIp, firstUse, onLoadComplete]);
+        };
+    
+        if (firstUse) {
+            fetchData(address);
+            setFirstUse(false);
+        }
+    
+        intervalIdRef.current = setInterval(() => {
+            const ipToCheck = customIp || address;
+            console.log('Checking the device status for IP:', ipToCheck);
+            fetchData(ipToCheck);
+        }, 5000);
+    
+        return () => {
+            clearInterval(intervalIdRef.current);
+        };
+    }, [address, customIp, firstUse]);
     
     const handleMakeStatic = async () => {
         setLoading(true);
