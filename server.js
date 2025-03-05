@@ -93,14 +93,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Serve React build
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'react-app/build')));
-  
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'react-app/src', 'index.js'));
-    });
-  }
+
 
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
@@ -661,7 +654,14 @@ process.on('SIGINT', async () => {
     }
     process.exit();
 });
-
+// Serve React build
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'react-app/build')));
+  
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'react-app/src', 'index.js'));
+    });
+  }
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
