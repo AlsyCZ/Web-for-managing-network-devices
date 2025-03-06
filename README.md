@@ -6,19 +6,20 @@ Goal is to create a web application for managing network devices using MikroTik 
 
 ## Build with
 - Mikrotik RouterOS API
- - Visual Studio Code
- - Node JS
- - React
- - Localhost
- - Bootstrap
- - Gmail SMTP Server
+- Visual Studio Code
+- Node JS (Express.js)
+- React
+- Localhost
+- Bootstrap
+- Gmail SMTP Server
+- MySQL database
 
 ## Requirements (for localhost)
 
 - You need to install React and Node JS framework.
 - Also you need to CREATE .env file in your root directory, and give API connection to your router, connection to database + connection to your Gmail SMTP!
 (I dont want to give you access to my whole home network. :D)
-- Project is now deployed to hosting and may not work great with localhost
+- Project is now deployed to hosting and may not work great with localhost!
 
 For example:
 - API_HOST= 345678ba32x0d.sn.mynetname.net
