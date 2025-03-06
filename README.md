@@ -13,10 +13,10 @@ Goal is to create a web application for managing network devices using MikroTik 
  - Bootstrap
  - Gmail SMTP Server
 
-## Requirements
+## Requirements (for localhost)
 
 - You need to install React and Node JS framework.
-- Also you need to CREATE .env file in your root directory, and give API connection to your router + connection to your Gmail SMTP!
+- Also you need to CREATE .env file in your root directory, and give API connection to your router, connection to database + connection to your Gmail SMTP!
 (I dont want to give you access to my whole home network. :D)
 
 For example:
@@ -27,6 +27,14 @@ For example:
 - JWT_SECRET= your_secret_for_token
 - EMAIL_USER= yourgmail@gmail.com
 - EMAIL_PASS= yourpassword (From Google App Password)
+- DB_HOST = mysql-xd3d.supabase.internal
+- DB_USER = user
+- DB_PASSWORD = cjhsadkfjPHLKASJjdsfljj
+- DB_NAME = supabase
+- DB_PORT = 3000
+- NODE_ENV = production
+- REACT_APP_SECONDARY_USERNAME = admin
+- REACT_APP_SECONDARY_PASSWORD = 12345678
 
 ## Authors
 
