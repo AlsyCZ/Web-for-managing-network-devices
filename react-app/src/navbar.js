@@ -44,7 +44,7 @@ const Navbar = () => {
 
     return (
         <nav className="navbar">
-            <div className="navbar-brand" onClick={() => navigate('/table')} style={{ cursor: 'pointer' }}>
+            <div className="navbar-brand" style={{ cursor: 'pointer' }}>
                 Network Management Web
             </div>
             <div className="navbar-right">

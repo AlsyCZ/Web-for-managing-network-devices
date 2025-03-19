@@ -33,7 +33,7 @@ const SecondaryLogin = () => {
     }, [navigate]);
 
     if (accessDenied) {
-        return <div style={{ textAlign: 'center', marginTop: '50px' }}>Přístup odepřen</div>;
+        return <div style={{ textAlign: 'center', marginTop: '50px' }}>Access denied</div>;
     }
 
     return null;
