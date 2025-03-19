@@ -49,6 +49,7 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    pointer-events: auto;
 }
 
 .modalStyle {
@@ -59,7 +60,8 @@
     justify-content: center;
     height: auto;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    display: block;
+    position: relative;
+    pointer-events: auto;
 }
 
 .closeButtonStyle {

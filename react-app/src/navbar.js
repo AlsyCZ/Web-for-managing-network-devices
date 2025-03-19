@@ -4,7 +4,7 @@ import './Styles/navbar.css';
 import VLANManager from './VlanManager';
 import Dot1x from './dot1x';
 
-const Navbar = () => {
+const Navbar = ({ onClose }) => {
     const [username, setUsername] = useState('');
     const [isVlanModalOpen, setIsVlanModalOpen] = useState(false);
     const [isDot1xModalOpen, setIsDot1xModalOpen] = useState(false);
@@ -31,6 +31,16 @@ const Navbar = () => {
         fetchUsername();
     }, [navigate]);
 
+    const handleOutsideClick = (e) => {
+        if (e.target.classList.contains('modalOverlayStyle')) {
+            if (isVlanModalOpen) {
+                closeVlanModal();
+            } else if (isDot1xModalOpen) {
+                closeDot1xModal();
+            }
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         navigate('/login');
@@ -55,16 +65,16 @@ const Navbar = () => {
             </div>
 
             {isVlanModalOpen && (
-                <div className="modalOverlayStyle">
-                    <div className="modalStyle">
+                <div className="modalOverlayStyle" onClick={handleOutsideClick}>
+                    <div className="modalStyle" onClick={(e) => e.stopPropagation()}>
                         <VLANManager onClose={closeVlanModal} />
                     </div>
                 </div>
             )}
 
             {isDot1xModalOpen && (
-                <div className="modalOverlayStyle">
-                    <div className="modalStyle">
+                <div className="modalOverlayStyle" onClick={handleOutsideClick}>
+                    <div className="modalStyle" onClick={(e) => e.stopPropagation()}>
                         <Dot1x onClose={closeDot1xModal} />
                     </div>
                 </div>
