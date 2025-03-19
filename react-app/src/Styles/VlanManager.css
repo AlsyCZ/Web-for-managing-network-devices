@@ -1,30 +1,3 @@
-/* Styly pro overlay */
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    pointer-events: auto;
-}
-
-.vlan-manager {
-    position: relative;
-    z-index: 1001;
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    max-width: 90%;
-    max-height: 90%;
-    overflow-y: auto;
-    pointer-events: auto;
-}
-
 .vlan-manager .vlan-input, .vlan-manager .vlan-select {
     width: 200px;
     padding: 5px;
@@ -35,13 +8,15 @@
     position: relative;
     box-sizing: content-box;
 }
-
+.vlan-manager .content {
+    max-height: 400px;
+    overflow-y: auto;
+}
 .vlan-manager .vlan-select {
     appearance: none;
     position: relative;
     box-sizing: content-box;
 }
-
 .vlan-manager .vlan-select::after {
     content: "";
     position: absolute;
@@ -52,7 +27,6 @@
     border-style: solid;
     border-color: #555 transparent transparent transparent;
 }
-
 .vlan-manager .vlan-select option {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -60,7 +34,6 @@
     max-width: 180px;
     box-sizing: content-box;
 }
-
 .vlan-manager .vlan-button {
     padding: 5px 10px;
     margin: 5px;
@@ -71,11 +44,12 @@
     font-size: 14px;
     cursor: pointer;
 }
-
 .vlan-manager .vlan-button:hover {
     background-color: #0056b3;
 }
-
+.vlan-manager {
+    padding: 20px;
+}
 .vlan-manager table {
     width: 100%;
     border-collapse: collapse;
@@ -94,9 +68,4 @@
 
 .vlan-manager tr:hover {
     background-color: #f1f1f1;
-}
-
-.vlan-manager .content {
-    max-height: 400px;
-    overflow-y: auto;
 }

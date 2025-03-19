@@ -12,7 +12,7 @@ const VLANManager = ({ onClose }) => {
     const [interfaces, setInterfaces] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
-
+    
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -124,9 +124,9 @@ const VLANManager = ({ onClose }) => {
 
     const handleCheckboxChangeVlan = async (bridgeName, vlanFiltering) => {
         const bridge = bridges.find(b => b.name === bridgeName);
-        if (bridge.vlanFiltering && bridge.mvrp) {
-            await handleCheckboxChangeMvrp(bridge.name, false);
-        }
+            if (bridge.vlanFiltering && bridge.mvrp) {
+                await handleCheckboxChangeMvrp(bridge.name, false);
+            }
         try {
             const response = await fetch('https://projekt.alsy.cz/api/enable-vlan-filtering', {
                 method: 'POST',
@@ -138,11 +138,11 @@ const VLANManager = ({ onClose }) => {
                     vlanFiltering,
                 }),
             });
-
+    
             if (!response.ok) {
                 throw new Error('Failed to update VLAN Filtering');
             }
-
+    
             const updatedBridges = bridges.map((bridge) =>
                 bridge.name === bridgeName ? { ...bridge, vlanFiltering } : bridge
             );
@@ -152,19 +152,18 @@ const VLANManager = ({ onClose }) => {
             setError('Failed to update VLAN Filtering');
         }
     };
-
     const refreshBridgesAndVlans = async () => {
         try {
             setLoading(true);
-
+    
             const bridgesResponse = await fetch('https://projekt.alsy.cz/api/get-bridges');
             const bridges = await bridgesResponse.json();
             setBridges(bridges);
-
+    
             const vlansResponse = await fetch('https://projekt.alsy.cz/api/get-vlans');
             const vlans = await vlansResponse.json();
             setVlans(vlans);
-
+    
             setError(null);
         } catch (err) {
             setError('Failed to fetch data');
@@ -172,14 +171,14 @@ const VLANManager = ({ onClose }) => {
             setLoading(false);
         }
     };
-
+    
     const handleCheckboxChangeMvrp = async (bridgeName, mvrp) => {
         try {
             const bridge = bridges.find(b => b.name === bridgeName);
             if (!bridge.vlanFiltering && !bridge.mvrp) {
                 await handleCheckboxChangeVlan(bridge.name, true);
             }
-
+    
             const response = await fetch('https://projekt.alsy.cz/api/enable-mvrp', {
                 method: 'POST',
                 headers: {
@@ -190,11 +189,11 @@ const VLANManager = ({ onClose }) => {
                     mvrp,
                 }),
             });
-
+    
             if (!response.ok) {
                 throw new Error('Failed to update MVRP');
             }
-
+    
             const updatedBridges = bridges.map((bridge) =>
                 bridge.name === bridgeName ? { ...bridge, mvrp } : bridge
             );
@@ -204,7 +203,7 @@ const VLANManager = ({ onClose }) => {
             setError('Failed to update MVRP');
         }
     };
-
+    
     const closeButtonStyle = {
         float: 'right',
         marginRight: '10px',
@@ -214,144 +213,135 @@ const VLANManager = ({ onClose }) => {
         cursor: 'pointer',
     };
 
-    // Funkce pro zavření modalu při kliknutí na overlay
-    const handleOutsideClick = (e) => {
-        if (e.target.classList.contains('overlay')) {
-            onClose(); // Zavření modalu pomocí prop `onClose`
-        }
-    };
-
     return (
-        <div className="overlay" onClick={handleOutsideClick}>
-            <div className="vlan-manager" onClick={(e) => e.stopPropagation()}>
-                <button style={closeButtonStyle} onClick={onClose}>X</button>
-                <h2>VLAN Bridge Manager</h2>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                {loading ? (
-                    <p>Loading VLANs...</p>
-                ) : (
-                    <>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>VLAN ID</th>
-                                    <th>Bridge</th>
-                                    <th>Tagged</th>
-                                    <th>Untagged</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {vlans.map((vlan, index) => (
-                                    <tr key={index}>
-                                        <td>{vlan['vlanIds'] || 'N/A'}</td>
-                                        <td>{vlan.bridge || 'N/A'}</td>
-                                        <td>{vlan.tagged || 'None'}</td>
-                                        <td>{vlan.untagged || 'None'}</td>
-                                        <td><button onClick={() => handleDeleteVlan(vlan.id)} className="vlan-button">Delete</button></td>
-                                    </tr>
+        <div className="vlan-manager">
+            <button style={closeButtonStyle} onClick={onClose}>X</button>
+            <h2>VLAN Bridge Manager</h2>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {loading ? (
+                <p>Loading VLANs...</p>
+            ) : (
+                <>
+                    <table>
+                <thead>
+                    <tr>
+                        <th>VLAN ID</th>
+                        <th>Bridge</th>
+                        <th>Tagged</th>
+                        <th>Untagged</th>  
+			            <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {vlans.map((vlan, index) => (
+                        <tr key={index}>
+                            <td>{vlan['vlanIds'] || 'N/A'}</td>
+                            <td>{vlan.bridge || 'N/A'}</td>
+                            <td>{vlan.tagged || 'None'}</td>
+                            <td>{vlan.untagged || 'None'}</td>
+                            <td><button onClick={() => handleDeleteVlan(vlan.id)} className="vlan-button">Delete</button></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+                    <div className="content" style={{ display: 'collumn', gap: '20px'}}>
+                        <div>
+                            <h3>Create New VLAN</h3>
+                            <input
+                                type="text"
+                                placeholder="VLAN ID"
+                                value={vlanId}
+                                onChange={(e) => setVlanId(e.target.value)}
+                                className="vlan-input"
+                            />
+                            <select
+                                value={selectedBridge}
+                                onChange={(e) => setSelectedBridge(e.target.value)}
+                                className="vlan-select"
+                            >
+                                <option value="" selected disabled hidden>Select Bridge</option>
+                                {bridges.map((bridge) => (
+                                    <option key={bridge.name} value={bridge.name}>{bridge.name}</option>
                                 ))}
-                            </tbody>
-                        </table>
+                            </select>
 
-                        <div className="content" style={{ display: 'collumn', gap: '20px' }}>
-                            <div>
-                                <h3>Create New VLAN</h3>
-                                <input
-                                    type="text"
-                                    placeholder="VLAN ID"
-                                    value={vlanId}
-                                    onChange={(e) => setVlanId(e.target.value)}
-                                    className="vlan-input"
-                                />
-                                <select
-                                    value={selectedBridge}
-                                    onChange={(e) => setSelectedBridge(e.target.value)}
-                                    className="vlan-select"
-                                >
-                                    <option value="" selected disabled hidden>Select Bridge</option>
-                                    {bridges.map((bridge) => (
-                                        <option key={bridge.name} value={bridge.name}>{bridge.name}</option>
-                                    ))}
-                                </select>
-
-                                <button onClick={handleCreateVlan} className="vlan-button">Create VLAN</button>
-                            </div>
-                            &nbsp;
-                            <div>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <div>
-                                        <h5>Tagged interface:</h5>
-                                        <select
-                                            onChange={(e) => handleAddInterface(e.target.value, 'tagged')}
-                                            className="vlan-select"
-                                        >
-                                            <option value="" selected disabled hidden>Select Interface</option>
-                                            {interfaces.map((iface) => (
-                                                <option key={iface.name} value={iface.name}>{iface.name}</option>
-                                            ))}
-                                        </select>
-                                        <ul>
-                                            {taggedInterfaces.map((iface) => (
-                                                <li key={iface}>
-                                                    {iface}{' '}
-                                                    <button className="vlan-button" onClick={() => handleRemoveInterface(iface, 'tagged')}>-</button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <h5>Untagged interface:</h5>
-                                        <select
-                                            onChange={(e) => handleAddInterface(e.target.value, 'untagged')}
-                                            className="vlan-select"
-                                        >
-                                            <option value="" selected disabled hidden>Select Interface</option>
-                                            {interfaces.map((iface) => (
-                                                <option key={iface.name} value={iface.name}>{iface.name}</option>
-                                            ))}
-                                        </select>
-                                        <ul>
-                                            {untaggedInterfaces.map((iface) => (
-                                                <li key={iface}>
-                                                    {iface}{' '}
-                                                    <button className="vlan-button" onClick={() => handleRemoveInterface(iface, 'untagged')}>-</button>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                            <button onClick={handleCreateVlan} className="vlan-button">Create VLAN</button>
+                        </div>
+                        &nbsp;
+                        <div>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div>
+                                    <h5>Tagged interface:</h5>
+                                    <select
+                                        onChange={(e) => handleAddInterface(e.target.value, 'tagged')}
+                                        className="vlan-select"
+                                    >
+                                        <option value="" selected disabled hidden>Select Interface</option>
+                                        {interfaces.map((iface) => (
+                                            <option key={iface.name} value={iface.name}>{iface.name}</option>
+                                        ))}
+                                    </select>
+                                    <ul>
+                                        {taggedInterfaces.map((iface) => (
+                                            <li key={iface}>
+                                                {iface}{' '}
+                                                <button className="vlan-button" onClick={() => handleRemoveInterface(iface, 'tagged')}>-</button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h5>Untagged interface:</h5>
+                                    <select
+                                        onChange={(e) => handleAddInterface(e.target.value, 'untagged')}
+                                        className="vlan-select"
+                                    >
+                                        <option value="" selected disabled hidden>Select Interface</option>
+                                        {interfaces.map((iface) => (
+                                            <option key={iface.name} value={iface.name}>{iface.name}</option>
+                                        ))}
+                                    </select>
+                                    <ul>
+                                        {untaggedInterfaces.map((iface) => (
+                                            <li key={iface}>
+                                                {iface}{' '}
+                                                <button className="vlan-button" onClick={() => handleRemoveInterface(iface, 'untagged')}>-</button>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <h3>Bridge Interfaces</h3>
-                        <ul>
-                            {bridges.map((bridge) => (
-                                <li key={bridge.name}>
-                                    <strong>Bridge:</strong> {bridge.name},
-                                    <strong> VLAN Filtering: </strong>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={bridge.vlanFiltering}
-                                            onChange={(e) => handleCheckboxChangeVlan(bridge.name, e.target.checked)}
-                                        />
-                                    </label>
-                                    ,
-                                    <strong> MVRP: </strong>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={bridge.mvrp}
-                                            onChange={(e) => handleCheckboxChangeMvrp(bridge.name, e.target.checked)}
-                                        />
-                                    </label>
-                                </li>
-                            ))}
-                        </ul>
-                    </>
-                )}
-            </div>
+                    <h3>Bridge Interfaces</h3>
+                    <ul>
+                    {bridges.map((bridge) => (
+        <li key={bridge.name}>
+            <strong>Bridge:</strong> {bridge.name}, 
+            <strong> VLAN Filtering: </strong> 
+            <label>
+                <input
+                    type="checkbox"
+                    checked={bridge.vlanFiltering}
+                    onChange={(e) => handleCheckboxChangeVlan(bridge.name, e.target.checked)}
+                />
+            </label>
+            , 
+            <strong> MVRP: </strong>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={bridge.mvrp}
+                    onChange={(e) => handleCheckboxChangeMvrp(bridge.name, e.target.checked)}
+                />
+            </label>
+        </li>
+                        ))}
+                    </ul>
+                </>
+            )}
         </div>
     );
 };
