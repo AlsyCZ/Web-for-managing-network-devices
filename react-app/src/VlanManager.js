@@ -214,9 +214,10 @@ const VLANManager = ({ onClose }) => {
         cursor: 'pointer',
     };
 
+    // Funkce pro zavření modalu při kliknutí na overlay
     const handleOutsideClick = (e) => {
         if (e.target.classList.contains('overlay')) {
-            onClose();
+            onClose(); // Zavření modalu pomocí prop `onClose`
         }
     };
 
