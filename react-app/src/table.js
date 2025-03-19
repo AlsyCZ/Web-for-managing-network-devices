@@ -137,7 +137,7 @@ const ArpTable = () => {
             )}
 
             {isVlanModalOpen && (
-                <div className="modalOverlayStyle" onClick={closeModal}>
+                <div className="modalOverlayStyle" onClick={closeVlanModal}>
                     <div className="modalStyle">
                         <VLANManager onClose={closeVlanModal} />
                     </div>
