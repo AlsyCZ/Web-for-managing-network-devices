@@ -15,16 +15,13 @@ const Login = () => {
             const response = await axios.post('https://projekt.alsy.cz/login', { username, password });
 
             if (response.data.verified === false) {
-                // Uživatel není ověřený, přesměrujeme na verify.js
-                navigate('/verify', { state: { username } }); // Můžeme předat username jako state
+                navigate('/verify', { state: { username } });
             } else {
-                // Uživatel je ověřený, uložíme token a přesměrujeme na /table
                 localStorage.setItem('token', response.data.token);
                 navigate('/table');
             }
         } catch (error) {
             if (error.response && error.response.status === 403) {
-                // Uživatel není ověřený, přesměrujeme na verify.js
                 navigate('/verify', { state: { username } });
             } else {
                 setError('Login failed. Please check your credentials.');

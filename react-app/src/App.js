@@ -13,7 +13,6 @@ const App = () => {
 
     useEffect(() => {
         const secondaryLogin = () => {
-            // Zkontrolujte, zda uživatel již provedl sekundární přihlášení
             const isSecondaryLoggedIn = localStorage.getItem('isSecondaryLoggedIn');
 
             if (!isSecondaryLoggedIn) {
@@ -25,23 +24,22 @@ const App = () => {
                     password === process.env.REACT_APP_SECONDARY_PASSWORD
                 ) {
                     alert('Login successful!');
-                    localStorage.setItem('isSecondaryLoggedIn', 'true'); // Uložení stavu
-                    setIsSecondaryLoggedIn(true); // Povolení zobrazení aplikace
+                    localStorage.setItem('isSecondaryLoggedIn', 'true');
+                    setIsSecondaryLoggedIn(true);
                 } else {
                     alert('Invalid username or password. Access denied.');
-                    // Nic se nezobrazí, zůstane bílá obrazovka
                 }
             } else {
-                setIsSecondaryLoggedIn(true); // Uživatel již prošel sekundárním přihlášením
+                setIsSecondaryLoggedIn(true);
             }
         };
 
         secondaryLogin();
     }, []);
 
-    // Pokud uživatel neprošel sekundárním přihlášením, nezobrazujte nic
+
     if (!isSecondaryLoggedIn) {
-        return null; // Nebo můžete zobrazit např. loading spinner
+        return null;
     }
 
     return (

@@ -65,3 +65,25 @@
     font-size: 20px;
     cursor: pointer;
 }
+.dot1x-manager::-webkit-scrollbar,
+.table-container::-webkit-scrollbar {
+    width: 10px;
+}
+
+.dot1x-manager::-webkit-scrollbar-track,
+.table-container::-webkit-scrollbar-track {
+    background: #f2f2f2;
+    border-radius: 5px;
+}
+
+.dot1x-manager::-webkit-scrollbar-thumb,
+.table-container::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 5px;
+    border: 2px solid #f2f2f2;
+}
+
+.dot1x-manager::-webkit-scrollbar-thumb:hover,
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}

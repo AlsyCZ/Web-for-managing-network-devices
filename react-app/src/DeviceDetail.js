@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Styles/DeviceDetail.css';
-import { useNavigate } from 'react-router-dom'; // Add this line
+import { useNavigate } from 'react-router-dom';
 
 const DeviceDetail = ({ address, onLoadComplete }) => {
     const [deviceData, setDeviceData] = useState(null);

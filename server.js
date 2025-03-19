@@ -62,7 +62,6 @@ require('events').EventEmitter.defaultMaxListeners = 0;
 app.use(express.static(path.join(__dirname, 'public')));
 connectToApi().catch(error => console.error('Initial connection error:', error));
 
-// MySQL database connection
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -70,21 +69,19 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME,
     port: process.env.DB_PORT || 3306,
     waitForConnections: true,
-    connectionLimit: 10, // Maximum number of connections in the pool
+    connectionLimit: 10,
     queueLimit: 0
 });
 
-// Test the connection by getting a connection from the pool
 pool.getConnection((err, connection) => {
     if (err) {
         console.error('Error connecting to the database:', err);
     } else {
         console.log('Connected to the MySQL database');
-        connection.release(); // Always release the connection back to the pool
+        connection.release();
     }
 });
 
-// Email transporter
 const transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
@@ -93,13 +90,11 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-
-
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
     pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
         if (err) {
-            console.error('Database error:', err); // Logování chyby
+            console.error('Database error:', err);
             return res.status(500).json({ error: 'Database error' });
         }
         if (results.length > 0) return res.status(400).json({ error: 'Username or email already exists' });
@@ -108,7 +103,7 @@ app.post('/register', async (req, res) => {
             const hashedPassword = await bcrypt.hash(password, 10);
             const otp = Math.floor(100000 + Math.random() * 900000);
             pool.query('INSERT INTO users (username, password, email, otp, verified) VALUES (?, ?, ?, ?, ?)', [username, hashedPassword, email, otp, 0], (err) => {
-                console.error('Database error:', err); // Logování chyby
+                console.error('Database error:', err);
                 if (err) return res.status(500).json({ error: 'Database error' });
                 
                 const mailOptions = {
@@ -159,11 +154,9 @@ app.post('/login', (req, res) => {
         }
 
         if (!results[0].verified) {
-            // Uživatel není ověřený, vrátíme speciální flag
             return res.status(403).json({ message: 'Email not verified', verified: false });
         }
 
-        // Uživatel je ověřený, vygenerujeme token
         const token = jwt.sign({ id: results[0].id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ token, verified: true });
     });
@@ -549,14 +542,13 @@ app.post('/api/create-dot1x-server', async (req, res) => {
     try {
         if (!client) throw new Error('Client not connected');
 
-        // Správný formát auth-types
         let authTypes = [];
         if (dot1xAuth) authTypes.push('dot1x');
         if (macAuth) authTypes.push('mac-auth');
 
         await client.menu('/interface/dot1x/server').add({
             interface: interface,
-            'auth-types': authTypes.join(","), // Správný formát pro MikroTik API
+            'auth-types': authTypes.join(","),
             'mac-auth-mode': macAuthMode || '',
             'radius-mac-format': radiusMacFormat || '',
             'accounting': accounting ? 'yes' : 'no',
@@ -575,7 +567,6 @@ app.post('/api/create-radius', async (req, res) => {
     try {
         if (!client) throw new Error('Client not connected');
 
-        // Připravíme pole služeb, které mají být povoleny
         const services = [];
         if (ppp) services.push('ppp');
         if (hotspot) services.push('hotspot');
@@ -585,9 +576,8 @@ app.post('/api/create-radius', async (req, res) => {
         if (wireless) services.push('wireless');
         if (ipsec) services.push('ipsec');
 
-        // Vytvoření RADIUS serveru pomocí MikroTik API
         await client.menu('/radius').add({
-            service: services.join(","), // Služby jako čárkou oddělený řetězec
+            service: services.join(","),
             address: address,
             protocol: protocol,
             secret: secret,
@@ -651,11 +641,9 @@ process.on('SIGINT', async () => {
     }
     process.exit();
 });
-// Serve React build
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'react-app/build')));
 
-    // Posíláme index.html pro všechny cesty
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, 'react-app/build', 'index.html'));
     });

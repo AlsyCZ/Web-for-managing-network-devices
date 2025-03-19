@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Styles/navbar.css'; // Import the navbar CSS
-import VLANManager from './VlanManager'; // Import VLANManager component
-import Dot1x from './dot1x'; // Import Dot1x component
+import './Styles/navbar.css';
+import VLANManager from './VlanManager';
+import Dot1x from './dot1x';
 
 const Navbar = () => {
     const [username, setUsername] = useState('');
@@ -11,7 +11,6 @@ const Navbar = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Fetch username from the server or localStorage
         const fetchUsername = async () => {
             try {
                 const token = localStorage.getItem('token');
@@ -45,7 +44,9 @@ const Navbar = () => {
 
     return (
         <nav className="navbar">
-            <div className="navbar-brand">Network Management Web</div>
+            <div className="navbar-brand" onClick={() => navigate('/table')} style={{ cursor: 'pointer' }}>
+                Network Management Web
+            </div>
             <div className="navbar-right">
                 {username && <span className="navbar-username">Logged in as: {username}</span>}
                 <button className="navbar-button" onClick={openVlanModal}>Edit VLANs</button>

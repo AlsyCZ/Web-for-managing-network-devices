@@ -1,5 +1,5 @@
 .navbar {
-    background-color: #343a40; /* Dark grey */
+    background-color: #343a40;
     padding: 10px;
     display: flex;
     justify-content: space-between;
@@ -27,7 +27,7 @@
     margin-right: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    background-color: #495057; /* Slightly lighter grey */
+    background-color: #495057;
     color: white;
     font-size: 16px;
     font-weight: bold;
@@ -35,7 +35,7 @@
 }
 
 .navbar-button:hover {
-    background-color: #212529; /* Even darker grey for hover */
+    background-color: #212529;
 }
 
 .modalOverlayStyle {

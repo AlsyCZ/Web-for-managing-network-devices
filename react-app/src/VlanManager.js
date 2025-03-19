@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Styles/VlanManager.css';
-import { useNavigate } from 'react-router-dom'; // Add this line
+import { useNavigate } from 'react-router-dom';
 
 const VLANManager = ({ onClose }) => {
     const [vlans, setVlans] = useState([]);
@@ -156,12 +156,10 @@ const VLANManager = ({ onClose }) => {
         try {
             setLoading(true);
     
-            // Znovu načtěte mosty
             const bridgesResponse = await fetch('https://projekt.alsy.cz/api/get-bridges');
             const bridges = await bridgesResponse.json();
             setBridges(bridges);
     
-            // Znovu načtěte VLANy
             const vlansResponse = await fetch('https://projekt.alsy.cz/api/get-vlans');
             const vlans = await vlansResponse.json();
             setVlans(vlans);

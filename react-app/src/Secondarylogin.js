@@ -7,7 +7,6 @@ const SecondaryLogin = () => {
 
     useEffect(() => {
         const secondaryLogin = () => {
-            // Zkontrolujte, zda uživatel již provedl sekundární přihlášení
             const isSecondaryLoggedIn = localStorage.getItem('isSecondaryLoggedIn');
 
             if (!isSecondaryLoggedIn) {
@@ -19,14 +18,14 @@ const SecondaryLogin = () => {
                     password === process.env.REACT_APP_SECONDARY_PASSWORD
                 ) {
                     alert('Login successful!');
-                    localStorage.setItem('isSecondaryLoggedIn', 'true'); // Uložení stavu
-                    navigate('/login'); // Přesměrování na přihlašovací stránku
+                    localStorage.setItem('isSecondaryLoggedIn', 'true');
+                    navigate('/login');
                 } else {
                     alert('Invalid username or password. Access denied.');
-                    setAccessDenied(true); // Zobrazí zprávu "Přístup odepřen"
+                    setAccessDenied(true);
                 }
             } else {
-                navigate('/login'); // Uživatel již prošel sekundárním přihlášením
+                navigate('/login');
             }
         };
 
@@ -37,7 +36,7 @@ const SecondaryLogin = () => {
         return <div style={{ textAlign: 'center', marginTop: '50px' }}>Přístup odepřen</div>;
     }
 
-    return null; // Tato komponenta nic nerenderuje
+    return null;
 };
 
 export default SecondaryLogin;

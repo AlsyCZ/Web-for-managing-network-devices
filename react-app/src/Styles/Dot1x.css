@@ -63,15 +63,15 @@
     cursor: pointer;
 }
 .dot1x-manager {
-    height: 500px; /* Nastav pevnou výšku */
-    overflow-y: auto; /* Umožní svislý scroll */
+    height: 500px;
+    overflow-y: auto;
     background: white;
     border-radius: 10px;
 }
 
 .table-container {
-    max-height: 300px; /* Výška tabulky */
-    overflow-y: auto; /* Scroll pro tabulku */
+    max-height: 300px;
+    overflow-y: auto;
     border: 1px solid #ddd;
 }
 
@@ -86,29 +86,25 @@ th, td {
     text-align: left;
 }
 
-/* Celý scrollbar */
 .dot1x-manager::-webkit-scrollbar,
 .table-container::-webkit-scrollbar {
-    width: 10px; /* Šířka scrollbar */
+    width: 10px;
 }
 
-/* Track (pozadí scrollbar) */
 .dot1x-manager::-webkit-scrollbar-track,
 .table-container::-webkit-scrollbar-track {
-    background: #f2f2f2; /* Světle šedé pozadí */
+    background: #f2f2f2;
     border-radius: 5px;
 }
 
-/* Samotný posuvník */
 .dot1x-manager::-webkit-scrollbar-thumb,
 .table-container::-webkit-scrollbar-thumb {
-    background: #007bff; /* Modrá barva jako tlačítka */
+    background: #007bff;
     border-radius: 5px;
-    border: 2px solid #f2f2f2; /* Okraj kolem scrollbar */
+    border: 2px solid #f2f2f2;
 }
 
-/* Posuvník při hoveru */
 .dot1x-manager::-webkit-scrollbar-thumb:hover,
 .table-container::-webkit-scrollbar-thumb:hover {
-    background: #0056b3; /* Tmavší modrá při najetí myší */
+    background: #0056b3;
 }

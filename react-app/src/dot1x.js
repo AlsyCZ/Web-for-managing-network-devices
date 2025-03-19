@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Styles/Dot1x.css'; // Import CSS
+import './Styles/Dot1x.css';
 
 const Dot1x = ({ onClose }) => {
     const [dot1xEntries, setDot1xEntries] = useState([]);
@@ -187,7 +187,7 @@ const Dot1x = ({ onClose }) => {
                 throw new Error('Failed to create new Radius');
             }
     
-            fetchRadiusData(); // Obnovení dat po úspěšném vytvoření
+            fetchRadiusData();
         } catch (error) {
             console.error('Error creating new Radius:', error);
         }
