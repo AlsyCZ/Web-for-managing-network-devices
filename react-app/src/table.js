@@ -21,6 +21,12 @@ const ArpTable = () => {
 
     const openVlanModal = () => setIsVlanModalOpen(true);
     const closeVlanModal = () => setIsVlanModalOpen(false);
+
+    const handleOutsideClick = (e) => {
+        if (e.target.classList.contains('modalOverlayStyle')) {
+            closeModal();
+        }
+    };
     
     const fetchData = async () => {
         try {
@@ -120,7 +126,7 @@ const ArpTable = () => {
             </table>
 
             {isDeviceModalOpen && (
-                <div className="modalOverlayStyle">
+                <div className="modalOverlayStyle" onClick={closeModal}>
                     <div className="modalStyle">
                         {!loading && (
                             <button className="closeButtonStyle" onClick={closeModal}>X</button>
@@ -131,7 +137,7 @@ const ArpTable = () => {
             )}
 
             {isVlanModalOpen && (
-                <div className="modalOverlayStyle">
+                <div className="modalOverlayStyle" onClick={closeModal}>
                     <div className="modalStyle">
                         <VLANManager onClose={closeVlanModal} />
                     </div>
