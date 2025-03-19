@@ -24,10 +24,14 @@ const ArpTable = () => {
 
     const handleOutsideClick = (e) => {
         if (e.target.classList.contains('modalOverlayStyle')) {
-            closeModal();
+            if (isDeviceModalOpen) {
+                closeModal();
+            } else if (isVlanModalOpen) {
+                closeVlanModal();
+            }
         }
     };
-    
+
     const fetchData = async () => {
         try {
             const response = await fetch('https://projekt.alsy.cz/api/raw-data');
@@ -88,6 +92,7 @@ const ArpTable = () => {
         setLoading(false);
         setSelectedAddress(null);
     };
+
     const handleLoadComplete = () => {
         setLoading(false);
     };
@@ -126,8 +131,8 @@ const ArpTable = () => {
             </table>
 
             {isDeviceModalOpen && (
-                <div className="modalOverlayStyle" onClick={closeModal}>
-                    <div className="modalStyle">
+                <div className="modalOverlayStyle" onClick={handleOutsideClick}>
+                    <div className="modalStyle" onClick={(e) => e.stopPropagation()}>
                         {!loading && (
                             <button className="closeButtonStyle" onClick={closeModal}>X</button>
                         )}
@@ -137,14 +142,14 @@ const ArpTable = () => {
             )}
 
             {isVlanModalOpen && (
-                <div className="modalOverlayStyle" onClick={closeVlanModal}>
-                    <div className="modalStyle">
+                <div className="modalOverlayStyle" onClick={handleOutsideClick}>
+                    <div className="modalStyle" onClick={(e) => e.stopPropagation()}>
                         <VLANManager onClose={closeVlanModal} />
                     </div>
                 </div>
             )}
-            
         </>
     );
 };
+
 export default ArpTable;
