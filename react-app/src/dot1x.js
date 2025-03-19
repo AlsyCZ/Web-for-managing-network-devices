@@ -257,15 +257,7 @@ const Dot1x = ({ onClose }) => {
         fontSize: '20px',
         cursor: 'pointer',
     };
-
-    const handleOutsideClick = (e) => {
-        if (e.target.classList.contains('overlay')) {
-            onClose();
-        }
-    };
-
     return (
-        <div className="overlay" onClick={handleOutsideClick}>
             <div className="dot1x-manager" onClick={(e) => e.stopPropagation()}>
                 <button style={closeButtonStyle} onClick={onClose}>X</button>
                 <h2>Dot1x Client Manager</h2>
@@ -551,7 +543,6 @@ const Dot1x = ({ onClose }) => {
                     <button className="submitbtn" type="submit">Create RADIUS</button>
                 </form>
             </div>
-        </div>
     );
 };
 
